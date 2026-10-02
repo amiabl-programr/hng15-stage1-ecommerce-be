@@ -1,0 +1,54 @@
+import cors from 'cors';
+import express, { type Express, type Router } from 'express';
+import helmet from 'helmet';
+
+import { env } from './config/env.ts';
+import { ForbiddenError } from './lib/errors.ts';
+import { createOriginAllowlist } from './lib/origin-allowlist.ts';
+import { errorHandler, notFoundHandler } from './middlewares/error.ts';
+import { requestId } from './middlewares/request-id.ts';
+import { healthRouter } from './routes/health.routes.ts';
+
+const JSON_BODY_LIMIT = '1mb';
+
+export type AppOptions = {
+  readonly corsOrigins?: readonly string[];
+  readonly routers?: readonly Router[];
+};
+
+function createCorsMiddleware(allowed: ReadonlySet<string>): ReturnType<typeof cors> {
+  return cors({
+    credentials: true,
+    origin(origin, callback) {
+      // A missing Origin means a same-origin, curl, or server-to-server request.
+      // Reflecting the header instead would make the allowlist decorative.
+      if (origin === undefined || allowed.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new ForbiddenError('Origin not allowed'));
+    },
+  });
+}
+
+export function createApp(options: AppOptions = {}): Express {
+  const app = express();
+  const allowlist = createOriginAllowlist(
+    (options.corsOrigins ?? env().corsOrigins).join(','),
+  );
+
+  app.use(requestId);
+  app.use(helmet());
+  app.use(createCorsMiddleware(allowlist));
+  app.use(express.json({ limit: JSON_BODY_LIMIT }));
+
+  app.use(healthRouter);
+  for (const router of options.routers ?? []) {
+    app.use(router);
+  }
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  return app;
+}
