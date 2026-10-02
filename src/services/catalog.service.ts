@@ -1,7 +1,7 @@
 import { env } from '../config/env.ts';
 import type { Category, MediaAsset, Product, ProductListQuery } from '../contracts/schemas/catalog.ts';
 import { NotFoundError, ValidationError } from '../lib/errors.ts';
-import { categoryModel, type CategoryRow } from '../models/category.model.ts';
+import { categoryModel } from '../models/category.model.ts';
 import { mediaModel, type CategoryImagePublicRow, type ProductImagePublicRow } from '../models/media.model.ts';
 import { productModel, type ProductPublicRow } from '../models/product.model.ts';
 
