@@ -1,16 +1,26 @@
 {
-  "name": "ecommerce-be",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "@roofing/api",
+  "version": "0.1.0",
+  "description": "Roofing Construction Shop — standalone API",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --selectProjects unit",
+    "test:integration": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --selectProjects integration --runInBand",
+    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --selectProjects unit --watch",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test",
+    "db:apply": "tsx scripts/db-apply.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -18,16 +28,35 @@
       "onFail": "download"
     }
   },
-  "type": "module",
   "dependencies": {
-    "express": "^5.2.1"
+    "@supabase/supabase-js": "^2.58.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@jest/globals": "^30.5.2",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^26.6.3",
+    "@types/pg": "^8.15.5",
+    "@types/supertest": "^7.2.1",
+    "cross-env": "^10.1.0",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
+    "jest": "^30.2.0",
+    "pg": "^8.16.3",
     "prettier": "^3.9.9",
+    "supabase": "^2.119.0",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
+    "tsx": "^4.20.6",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.0"
   }

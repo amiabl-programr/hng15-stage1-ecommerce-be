@@ -1,0 +1,9 @@
+# Build scripts that are allowed to run. sharp is a native module and needs its
+# install script; notes.md §7 flags `allowBuilds: { sharp: false }` as the current
+# blocker. sharp itself arrives with the media pipeline (Phase 10), but the
+# allowance is set now so the first install is not the thing that breaks.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  unrs-resolver: true
+  sharp: true
