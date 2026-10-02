@@ -20,6 +20,13 @@ const realValue = z
     message: 'looks like a placeholder value, not a real credential',
   });
 
+const realUrl = z
+  .string()
+  .url()
+  .refine((value) => !looksLikePlaceholder(value), {
+    message: 'looks like a placeholder value, not a real url',
+  });
+
 const booleanFromString = z
   .enum(['true', 'false'])
   .default('false')
@@ -30,7 +37,8 @@ const rawEnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
   APP_URL: z.string().url(),
   CORS_ORIGINS: z.string().min(1),
-  SUPABASE_URL: z.string().url(),
+  SUPABASE_URL: realUrl.optional(),
+  SUPABASE_DB_URL: z.string().min(1).optional(),
   SUPABASE_ANON_KEY: realValue,
   SUPABASE_SECRET_KEY: z.string().min(1).optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
@@ -88,6 +96,48 @@ function resolveSecretKey(parsed: z.infer<typeof rawEnvSchema>): string {
   return candidate;
 }
 
+/**
+ * `db.<ref>.supabase.co` and `<ref>.supabase.co` are the same project behind two
+ * doors, so a direct Postgres host is enough to find the API URL. A *pooler* host
+ * is not: `aws-1-eu-west-3.pooler.supabase.com` carries no project ref, so it cannot
+ * be inverted. Set SUPABASE_URL explicitly in that case — the dashboard has it under
+ * Project Settings → Data API → Project URL.
+ */
+function deriveApiUrlFromDbUrl(value: string): URL | undefined {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+
+  if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') {
+    return undefined;
+  }
+  if (!url.hostname.startsWith('db.')) {
+    return undefined;
+  }
+
+  return new URL(`https://${url.hostname.slice('db.'.length)}`);
+}
+
+function resolveSupabaseUrl(parsed: z.infer<typeof rawEnvSchema>): URL {
+  if (parsed.SUPABASE_URL !== undefined) {
+    return new URL(parsed.SUPABASE_URL);
+  }
+
+  const derived =
+    parsed.SUPABASE_DB_URL === undefined ? undefined : deriveApiUrlFromDbUrl(parsed.SUPABASE_DB_URL);
+
+  if (derived === undefined) {
+    throw new EnvValidationError(
+      'SUPABASE_URL is required and could not be derived. SUPABASE_DB_URL only reveals it when it is a direct host of the form db.<project-ref>.supabase.co; a pooler host does not. Set SUPABASE_URL to the Project URL from Project Settings → Data API, or copy this project\'s value: https://xkierkbfzyamuetgftzj.supabase.co',
+    );
+  }
+
+  return derived;
+}
+
 function splitList(value: string): readonly string[] {
   return value
     .split(',')
@@ -95,8 +145,24 @@ function splitList(value: string): readonly string[] {
     .filter((entry) => entry.length > 0);
 }
 
+function parseRaw(source: NodeJS.ProcessEnv): z.infer<typeof rawEnvSchema> {
+  const result = rawEnvSchema.safeParse(source);
+
+  if (result.success) {
+    return result.data;
+  }
+
+  // Every problem in one line naming every variable, instead of a ZodError tree the
+  // operator has to read to find the single name they got wrong.
+  const summary = result.error.issues
+    .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+    .join('; ');
+
+  throw new EnvValidationError(`Invalid environment — ${summary}`);
+}
+
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const parsed = rawEnvSchema.parse(source);
+  const parsed = parseRaw(source);
   const supabaseSecretKey = resolveSecretKey(parsed);
 
   return {
@@ -105,7 +171,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     port: parsed.PORT,
     appUrl: new URL(parsed.APP_URL),
     corsOrigins: splitList(parsed.CORS_ORIGINS),
-    supabaseUrl: new URL(parsed.SUPABASE_URL),
+    supabaseUrl: resolveSupabaseUrl(parsed),
     supabaseAnonKey: parsed.SUPABASE_ANON_KEY,
     supabaseSecretKey,
     storageBucket: parsed.STORAGE_BUCKET,

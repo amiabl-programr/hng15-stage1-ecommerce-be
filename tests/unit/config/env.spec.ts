@@ -102,6 +102,89 @@ describe('secret key resolution', () => {
   });
 });
 
+describe('supabase url resolution', () => {
+  it('uses SUPABASE_URL when it is set', () => {
+    const parsed = loadEnv({
+      ...valid,
+      SUPABASE_URL: 'https://explicit.supabase.co',
+      SUPABASE_DB_URL: 'postgresql://postgres@db.otherref.supabase.co:5432/postgres',
+    });
+
+    expect(parsed.supabaseUrl.hostname).toBe('explicit.supabase.co');
+  });
+
+  it('derives the api url from a direct db.<ref> host', () => {
+    const { SUPABASE_URL: _u, ...withoutUrl } = valid;
+
+    const parsed = loadEnv({
+      ...withoutUrl,
+      SUPABASE_DB_URL: 'postgresql://postgres:pw@db.xkierkbfzyamuetgftzj.supabase.co:5432/postgres',
+    });
+
+    expect(parsed.supabaseUrl.toString()).toBe('https://xkierkbfzyamuetgftzj.supabase.co/');
+  });
+
+  it('cannot derive from a pooler host, and says where to get it', () => {
+    const { SUPABASE_URL: _u, ...withoutUrl } = valid;
+
+    expect(() =>
+      loadEnv({
+        ...withoutUrl,
+        SUPABASE_DB_URL:
+          'postgresql://postgres.xkierkbfzyamuetgftzj:pw@aws-1-eu-west-3.pooler.supabase.com:5432/postgres',
+      }),
+    ).toThrow(/SUPABASE_URL is required and could not be derived/);
+  });
+
+  it('cannot derive when neither variable is set', () => {
+    const { SUPABASE_URL: _u, ...withoutUrl } = valid;
+
+    expect(() => loadEnv(withoutUrl)).toThrow(/SUPABASE_URL is required/);
+  });
+
+  it('rejects a placeholder SUPABASE_URL rather than booting against a fake project', () => {
+    expect(() => loadEnv({ ...valid, SUPABASE_URL: 'https://your-project-ref.supabase.co' })).toThrow(
+      EnvValidationError,
+    );
+  });
+
+  it('rejects a malformed SUPABASE_URL', () => {
+    expect(() => loadEnv({ ...valid, SUPABASE_URL: 'not a url' })).toThrow(EnvValidationError);
+  });
+});
+
+describe('boot error readability', () => {
+  it('names every missing variable in a single EnvValidationError', () => {
+    const errors = collectIssues({ ...valid, APP_URL: undefined, CORS_ORIGINS: undefined });
+
+    expect(errors.join(' | ')).toContain('APP_URL');
+    expect(errors.join(' | ')).toContain('CORS_ORIGINS');
+    expect(errors).toHaveLength(2);
+  });
+
+  it('says which value is a placeholder, and which variable holds it', () => {
+    const errors = collectIssues({ ...valid, GOOGLE_CLIENT_ID: 'your-client-id' });
+
+    expect(errors.join(' ')).toContain('GOOGLE_CLIENT_ID');
+    expect(errors.join(' ')).toContain('placeholder');
+  });
+
+  it('never leaks a credential value into the message', () => {
+    const errors = collectIssues({ ...valid, SUPABASE_ANON_KEY: 'your-anon-key' });
+
+    expect(errors.join(' ')).not.toContain('your-anon-key');
+  });
+});
+
+function collectIssues(source: NodeJS.ProcessEnv): string[] {
+  try {
+    loadEnv(source);
+  } catch (error) {
+    return (error as Error).message.split('; ');
+  }
+  throw new Error('expected loadEnv to throw');
+}
+
 describe('placeholder rejection', () => {
   const placeholders = [
     'your-anon-key',
