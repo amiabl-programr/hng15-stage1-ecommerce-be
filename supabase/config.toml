@@ -1,0 +1,50 @@
+# Configuration for the linked hosted project. The local stack (`supabase start`)
+# is not used by this build — the integration tests connect straight to a Postgres
+# over SUPABASE_DB_URL, which needs no Docker.
+#
+# Docker is required by exactly one thing here: `supabase db pull` starts a shadow
+# Postgres container to replay supabase/migrations against. Applying SQL
+# (`db query --linked`), `db push`, `migration list` and `gen types` are network
+# calls only.
+
+project_id = "roofing-api"
+
+# REQUIRED, not cosmetic. The legacy migra diff engine is documented to miss
+# changes to "views with security_invoker attributes" — which is exactly what
+# product_images_public and friends are. On the default engine a generated
+# migration would drop security_invoker and silently reintroduce the RLS bypass
+# that §0 of plan.md exists to prevent. pg-delta handles it.
+[experimental.pgdelta]
+enabled = true
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+# Imperative-migrations project: no [db.migrations] schema_paths, and no
+# supabase/schemas/ directory. Migrations are generated from the linked remote with
+# `supabase db pull` after the change has been applied and verified there.
+
+[studio]
+enabled = false
+port = 54323
+
+[inbucket]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = false
+
+[analytics]
+enabled = false
