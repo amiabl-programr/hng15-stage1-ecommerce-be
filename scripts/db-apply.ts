@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 
 import { Client } from 'pg';
 
+import '../src/config/load-env-file.ts';
+
 /**
  * Step 1 of the schema change loop in plan.md: apply SQL to the linked hosted
  * database so it can be verified there and then captured with `supabase db pull`.

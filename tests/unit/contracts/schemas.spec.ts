@@ -112,16 +112,18 @@ describe('RelativePathSchema', () => {
   });
 });
 
-// ── money is an integer in kobo ──────────────────────────────────────────────────
+// ── money is a whole number of naira ─────────────────────────────────────────────
 
 describe('MoneySchema', () => {
-  it('accepts zero and whole kobo', () => {
+  it('accepts zero and a whole naira amount', () => {
     expect(common.MoneySchema.safeParse(0).success).toBe(true);
     expect(common.MoneySchema.safeParse(1_500_000).success).toBe(true);
   });
 
-  it.each([15000.5, -1, Number.POSITIVE_INFINITY])('rejects %p', (value) => {
-    expect(common.MoneySchema.safeParse(value).success).toBe(false);
+  it('rejects fractional naira, negative and non-finite values', () => {
+    for (const value of [15000.5, -1, Number.POSITIVE_INFINITY]) {
+      expect([value, common.MoneySchema.safeParse(value).success]).toEqual([value, false]);
+    }
   });
 });
 

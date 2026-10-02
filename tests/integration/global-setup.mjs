@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Client } from 'pg';
 
 // Plain .mjs on purpose: Jest loads globalSetup outside the transform pipeline, so it
@@ -12,7 +13,7 @@ export default async function globalSetup() {
     return;
   }
 
-  const client = new Client({ connectionString, connectionTimeoutMillis: 5_000 });
+  const client = new Client({ connectionString, connectionTimeoutMillis: 20_000 });
 
   try {
     await client.connect();

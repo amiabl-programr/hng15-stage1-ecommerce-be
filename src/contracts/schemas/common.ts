@@ -113,8 +113,10 @@ export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
 export const UuidSchema = z.uuid();
 
 /**
- * Kobo, the smallest unit of the Nigerian naira. Integers only: money arrives from a
- * bigint column and a float in this field is a rounding bug waiting for a large order.
+ * Naira, as a whole number. The shop trades in naira and nothing else, so there is no
+ * currency code on any amount and no conversion anywhere in the build. Integers only:
+ * money arrives from a bigint column, and a float here is a rounding bug waiting for a
+ * large order. Fractional naira is not a thing this store sells.
  */
 export const MoneySchema = z.int().nonnegative().safe();
 
