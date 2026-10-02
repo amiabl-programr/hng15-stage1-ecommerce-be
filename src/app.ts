@@ -10,6 +10,7 @@ import { errorHandler, notFoundHandler } from './middlewares/error.ts';
 import { requestId } from './middlewares/request-id.ts';
 import { accountRouter } from './routes/account.routes.ts';
 import { authRouter } from './routes/auth.routes.ts';
+import { catalogRouter } from './routes/catalog.routes.ts';
 import { healthRouter } from './routes/health.routes.ts';
 
 const JSON_BODY_LIMIT = '1mb';
@@ -49,6 +50,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(healthRouter);
   app.use(authRouter);
   app.use(accountRouter);
+  app.use(catalogRouter);
 
   for (const router of options.routers ?? []) {
     app.use(router);
