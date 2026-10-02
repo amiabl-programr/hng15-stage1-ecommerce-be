@@ -8,6 +8,7 @@ export type FieldIssue = {
 };
 
 export class AppError extends Error {
+  readonly isAppError = true;
   readonly code: ErrorCode;
   readonly status: number;
   readonly fields: readonly FieldIssue[];
@@ -68,6 +69,12 @@ export class InvalidStateError extends AppError {
   }
 }
 
+export class UnsupportedMediaTypeError extends AppError {
+  constructor(message = 'Unsupported media type') {
+    super('UNSUPPORTED_MEDIA_TYPE', message, 415);
+  }
+}
+
 export class RateLimitedError extends AppError {
   constructor(message = 'Too many requests') {
     super('RATE_LIMITED', message, 429);
@@ -90,5 +97,11 @@ export class InternalError extends AppError {
 }
 
 export function isAppError(value: unknown): value is AppError {
-  return value instanceof AppError;
+  return (
+    value instanceof AppError ||
+    (typeof value === 'object' &&
+      value !== null &&
+      'isAppError' in value &&
+      (value as { isAppError: unknown }).isAppError === true)
+  );
 }

@@ -119,6 +119,7 @@ export async function listCategories(): Promise<Category[]> {
 export async function listProducts(
   query: ProductListQuery,
 ): Promise<{ items: Product[]; nextCursor: string | null }> {
+  const cursor = query.cursor ? decodeCursor(query.cursor) : undefined;
   let categoryId: string | undefined;
   let categoryMap = new Map<string, Category>();
 
@@ -139,8 +140,6 @@ export async function listProducts(
     const allCats = await listCategories();
     categoryMap = new Map(allCats.map((c) => [c.id, c]));
   }
-
-  const cursor = query.cursor ? decodeCursor(query.cursor) : undefined;
   const rawProducts = await productModel.listPublicProducts({
     categoryId,
     cursor,

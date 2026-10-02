@@ -1,3 +1,4 @@
+import { ZodError } from 'zod';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
 import { AppError, InternalError, ValidationError, isAppError } from '../lib/errors.ts';
@@ -40,11 +41,23 @@ function fromBodyParser(error: unknown): AppError | undefined {
   return message === undefined ? undefined : new ValidationError(message);
 }
 
+function fromZodError(error: unknown): AppError | undefined {
+  if (error instanceof ZodError || (typeof error === 'object' && error !== null && 'issues' in error)) {
+    const zodError = error as ZodError;
+    const fields = (zodError.issues || []).map((issue) => ({
+      path: issue.path.join('.'),
+      message: issue.message,
+    }));
+    return new ValidationError('Validation failed', fields);
+  }
+  return undefined;
+}
+
 function toAppError(error: unknown): AppError {
   if (isAppError(error)) {
     return error;
   }
-  return fromBodyParser(error) ?? new InternalError(error);
+  return fromZodError(error) ?? fromBodyParser(error) ?? new InternalError(error);
 }
 
 function describeCause(cause: unknown): string | undefined {

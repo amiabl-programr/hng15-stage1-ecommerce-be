@@ -617,6 +617,7 @@
           "CONFLICT",
           "INSUFFICIENT_STOCK",
           "INVALID_STATE",
+          "UNSUPPORTED_MEDIA_TYPE",
           "RATE_LIMITED",
           "INTERNAL_ERROR"
         ]

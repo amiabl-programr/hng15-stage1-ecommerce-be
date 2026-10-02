@@ -1,4 +1,4 @@
-import { publicDb } from '../config/supabase.ts';
+import { db, publicDb } from '../config/supabase.ts';
 import type { Database } from '../config/database.types.ts';
 import { InternalError } from '../lib/errors.ts';
 
@@ -72,8 +72,25 @@ export async function listFeaturedProducts(
   return (data as ProductPublicRow[]) ?? [];
 }
 
+export async function findProductById(
+  id: string,
+): Promise<Database['public']['Tables']['products']['Row'] | null> {
+  const { data, error } = await db
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    throw new InternalError(error);
+  }
+
+  return (data as Database['public']['Tables']['products']['Row'] | null) ?? null;
+}
+
 export const productModel = {
   listPublicProducts,
   findPublicProductBySlug,
   listFeaturedProducts,
+  findProductById,
 };

@@ -9,6 +9,7 @@ import {
   NotFoundError,
   RateLimitedError,
   UnauthorizedError,
+  UnsupportedMediaTypeError,
   ValidationError,
   isAppError,
 } from '../../../src/lib/errors.ts';
@@ -45,6 +46,7 @@ describe('subclass statuses', () => {
     [new ConflictError('dup'), 409, 'CONFLICT'],
     [new InsufficientStockError(), 409, 'INSUFFICIENT_STOCK'],
     [new InvalidStateError('bad state'), 422, 'INVALID_STATE'],
+    [new UnsupportedMediaTypeError(), 415, 'UNSUPPORTED_MEDIA_TYPE'],
     [new RateLimitedError(), 429, 'RATE_LIMITED'],
     [new InternalError(new Error('boom')), 500, 'INTERNAL_ERROR'],
   ] as const;

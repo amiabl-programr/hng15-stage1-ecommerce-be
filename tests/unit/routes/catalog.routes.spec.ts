@@ -3,6 +3,7 @@ import request from 'supertest';
 
 import { createApp } from '../../../src/app.ts';
 import { catalogService } from '../../../src/services/catalog.service.ts';
+import { NotFoundError } from '../../../src/lib/errors.ts';
 import { ProductBySlugSchema } from '../../../src/contracts/schemas/catalog.ts';
 import type { Category, Product } from '../../../src/contracts/schemas/catalog.ts';
 
@@ -125,6 +126,10 @@ describe('catalog routes', () => {
     });
 
     it('returns 404 NOT_FOUND for unknown product slug', async () => {
+      jest
+        .spyOn(catalogService, 'getProductBySlug')
+        .mockRejectedValueOnce(new NotFoundError('Product not found'));
+
       const response = await request(app()).get('/api/products/unknown-slug-not-exists');
 
       expect(response.status).toBe(404);

@@ -206,6 +206,108 @@ export type Database = {
         };
         Relationships: [];
       };
+      product_images: {
+        Row: {
+          id: string;
+          product_id: string;
+          storage_path: string;
+          alt_text: string;
+          role: ImageRole;
+          width: number | null;
+          height: number | null;
+          bytes: number | null;
+          mime_type: string | null;
+          blurhash: string | null;
+          source: string;
+          source_url: string | null;
+          license: string;
+          permission_status: PermissionStatus;
+          display_order: number;
+          is_primary: boolean;
+          uploaded_by: string | null;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string | undefined;
+          product_id: string;
+          storage_path: string;
+          alt_text: string;
+          role?: ImageRole | undefined;
+          width?: number | null | undefined;
+          height?: number | null | undefined;
+          bytes?: number | null | undefined;
+          mime_type?: string | null | undefined;
+          blurhash?: string | null | undefined;
+          source?: string | undefined;
+          source_url?: string | null | undefined;
+          license?: string | undefined;
+          permission_status?: PermissionStatus | undefined;
+          display_order?: number | undefined;
+          is_primary?: boolean | undefined;
+          uploaded_by?: string | null | undefined;
+          deleted_at?: string | null | undefined;
+          created_at?: string | undefined;
+          updated_at?: string | undefined;
+        };
+        Update: {
+          id?: string | undefined;
+          product_id?: string | undefined;
+          storage_path?: string | undefined;
+          alt_text?: string | undefined;
+          role?: ImageRole | undefined;
+          width?: number | null | undefined;
+          height?: number | null | undefined;
+          bytes?: number | null | undefined;
+          mime_type?: string | null | undefined;
+          blurhash?: string | null | undefined;
+          source?: string | undefined;
+          source_url?: string | null | undefined;
+          license?: string | undefined;
+          permission_status?: PermissionStatus | undefined;
+          display_order?: number | undefined;
+          is_primary?: boolean | undefined;
+          uploaded_by?: string | null | undefined;
+          deleted_at?: string | null | undefined;
+          created_at?: string | undefined;
+          updated_at?: string | undefined;
+        };
+        Relationships: [];
+      };
+      category_images: {
+        Row: {
+          id: string;
+          category_id: string;
+          storage_path: string;
+          alt_text: string;
+          display_order: number;
+          is_primary: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string | undefined;
+          category_id: string;
+          storage_path: string;
+          alt_text: string;
+          display_order?: number | undefined;
+          is_primary?: boolean | undefined;
+          created_at?: string | undefined;
+          updated_at?: string | undefined;
+        };
+        Update: {
+          id?: string | undefined;
+          category_id?: string | undefined;
+          storage_path?: string | undefined;
+          alt_text?: string | undefined;
+          display_order?: number | undefined;
+          is_primary?: boolean | undefined;
+          created_at?: string | undefined;
+          updated_at?: string | undefined;
+        };
+        Relationships: [];
+      };
       orders: {
         Row: {
           id: string;
