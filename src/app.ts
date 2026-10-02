@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { type Express, type Router } from 'express';
 import helmet from 'helmet';
@@ -7,6 +8,8 @@ import { ForbiddenError } from './lib/errors.ts';
 import { createOriginAllowlist } from './lib/origin-allowlist.ts';
 import { errorHandler, notFoundHandler } from './middlewares/error.ts';
 import { requestId } from './middlewares/request-id.ts';
+import { accountRouter } from './routes/account.routes.ts';
+import { authRouter } from './routes/auth.routes.ts';
 import { healthRouter } from './routes/health.routes.ts';
 
 const JSON_BODY_LIMIT = '1mb';
@@ -40,9 +43,13 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(requestId);
   app.use(helmet());
   app.use(createCorsMiddleware(allowlist));
+  app.use(cookieParser());
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
   app.use(healthRouter);
+  app.use(authRouter);
+  app.use(accountRouter);
+
   for (const router of options.routers ?? []) {
     app.use(router);
   }

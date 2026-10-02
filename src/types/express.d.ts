@@ -1,4 +1,24 @@
-export {};
+import type { UserRole } from '../contracts/schemas/common.ts';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  role: UserRole;
+  createdAt: string;
+}
+
+export interface AuthSession {
+  id: string;
+  profileId: string;
+  tokenHash: string;
+  expiresAt: string;
+  createdAt: string;
+  lastSeenAt: string;
+  userAgent: string | null;
+  ip: string | null;
+}
 
 declare global {
   namespace Express {
@@ -9,6 +29,9 @@ declare global {
        * exposing anything about them.
        */
       requestId: string;
+      user?: AuthUser;
+      session?: AuthSession;
+      sessionToken?: string;
     }
   }
 }

@@ -56,6 +56,7 @@ export default {
       ...shared,
       displayName: 'unit',
       testEnvironment: 'node',
+      setupFiles: ['<rootDir>/tests/support/unit-setup.ts'],
       testMatch: ['<rootDir>/tests/unit/**/*.spec.ts', '<rootDir>/src/**/*.spec.ts'],
     },
     {
