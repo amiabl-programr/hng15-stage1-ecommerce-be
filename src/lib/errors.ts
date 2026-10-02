@@ -1,16 +1,6 @@
-export const ERROR_CODES = [
-  'VALIDATION_ERROR',
-  'UNAUTHORIZED',
-  'FORBIDDEN',
-  'NOT_FOUND',
-  'CONFLICT',
-  'INSUFFICIENT_STOCK',
-  'INVALID_STATE',
-  'RATE_LIMITED',
-  'INTERNAL_ERROR',
-] as const;
+import { ERROR_CODES, type ErrorCode } from '../contracts/schemas/common.ts';
 
-export type ErrorCode = (typeof ERROR_CODES)[number];
+export { ERROR_CODES, type ErrorCode };
 
 export type FieldIssue = {
   readonly path: string;
