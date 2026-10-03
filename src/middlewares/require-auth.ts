@@ -39,7 +39,7 @@ export async function requireAuth(
       await sessionModel.updateSessionTouchAndExpiry(activeSession.id, newExpiresAt);
       res.cookie(SESSION_COOKIE_NAME, rawToken, {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: config.isProduction ? 'none' : 'lax',
         path: '/',
         secure: config.isProduction,
         maxAge: ttlMs,

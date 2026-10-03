@@ -29,6 +29,13 @@ describe('auth routes', () => {
       expect(stateCookie).toBeDefined();
       expect(stateCookie).toContain('HttpOnly');
     });
+
+    it('supports /api/auth/login/google alias', async () => {
+      const response = await request(app()).get('/api/auth/login/google?next=/orders');
+
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('https://accounts.google.com/o/oauth2/v2/auth');
+    });
   });
 
   describe('GET /api/auth/callback/google', () => {

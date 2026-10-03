@@ -47,7 +47,7 @@ export async function findProfileByEmail(email: string): Promise<ProfileRow | nu
   const { data, error } = await db
     .from('profiles')
     .select('*')
-    .eq('email', email)
+    .ilike('email', email.trim().toLowerCase())
     .maybeSingle();
 
   if (error) {
@@ -67,7 +67,7 @@ export async function createProfile(data: {
   const { data: created, error } = await db
     .from('profiles')
     .insert({
-      email: data.email,
+      email: data.email.trim().toLowerCase(),
       full_name: data.fullName ?? null,
       avatar_url: data.avatarUrl ?? null,
       google_id: data.googleId ?? null,

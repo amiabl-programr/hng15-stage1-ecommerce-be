@@ -6,6 +6,7 @@ import { requireAuth } from '../middlewares/require-auth.ts';
 export const authRouter = Router();
 
 authRouter.get('/api/auth/google', authController.googleAuth);
+authRouter.get('/api/auth/login/google', authController.googleAuth);
 authRouter.get('/api/auth/callback/google', authController.googleCallback);
 authRouter.post('/api/auth/logout', authController.logout);
 authRouter.get('/api/auth/me', authController.getMe);

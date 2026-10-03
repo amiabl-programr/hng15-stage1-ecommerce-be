@@ -18,7 +18,7 @@ export function googleAuth(req: Request, res: Response, next: NextFunction): voi
     const config = env();
     res.cookie(OAUTH_STATE_COOKIE, stateCookieValue, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: config.isProduction ? 'none' : 'lax',
       path: '/',
       secure: config.isProduction,
       maxAge: 10 * 60 * 1000, // 10 minutes
@@ -49,11 +49,16 @@ export async function googleCallback(
     });
 
     const config = env();
-    res.clearCookie(OAUTH_STATE_COOKIE, { path: '/' });
+    res.clearCookie(OAUTH_STATE_COOKIE, {
+      httpOnly: true,
+      sameSite: config.isProduction ? 'none' : 'lax',
+      secure: config.isProduction,
+      path: '/',
+    });
 
     res.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: config.isProduction ? 'none' : 'lax',
       path: '/',
       secure: config.isProduction,
       maxAge: config.sessionTtlDays * 24 * 60 * 60 * 1000,
@@ -72,10 +77,16 @@ export async function logout(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const config = env();
     const rawToken = req.cookies?.[SESSION_COOKIE_NAME] as string | undefined;
     await authService.logout(rawToken);
 
-    res.clearCookie(SESSION_COOKIE_NAME, { path: '/' });
+    res.clearCookie(SESSION_COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: config.isProduction ? 'none' : 'lax',
+      secure: config.isProduction,
+      path: '/',
+    });
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -122,7 +133,13 @@ export async function revokeSession(
     await authService.revokeUserSession(req.user!.id, sessionId);
 
     if (req.session?.id === sessionId) {
-      res.clearCookie(SESSION_COOKIE_NAME, { path: '/' });
+      const config = env();
+      res.clearCookie(SESSION_COOKIE_NAME, {
+        httpOnly: true,
+        sameSite: config.isProduction ? 'none' : 'lax',
+        secure: config.isProduction,
+        path: '/',
+      });
     }
 
     res.json({ success: true });
