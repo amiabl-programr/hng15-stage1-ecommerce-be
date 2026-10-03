@@ -29,9 +29,9 @@ declare global {
        * exposing anything about them.
        */
       requestId: string;
-      user?: AuthUser;
-      session?: AuthSession;
-      sessionToken?: string;
+      user?: AuthUser | undefined;
+      session?: AuthSession | undefined;
+      sessionToken?: string | undefined;
     }
   }
 }

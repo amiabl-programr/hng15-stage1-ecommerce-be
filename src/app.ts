@@ -11,6 +11,7 @@ import { requestId } from './middlewares/request-id.ts';
 import { accountRouter } from './routes/account.routes.ts';
 import { authRouter } from './routes/auth.routes.ts';
 import { catalogRouter } from './routes/catalog.routes.ts';
+import { checkoutRouter } from './routes/checkout.routes.ts';
 import { healthRouter } from './routes/health.routes.ts';
 import { mediaRouter } from './routes/media.routes.ts';
 
@@ -53,6 +54,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(accountRouter);
   app.use(catalogRouter);
   app.use(mediaRouter);
+  app.use(checkoutRouter);
 
   for (const router of options.routers ?? []) {
     app.use(router);

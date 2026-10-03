@@ -78,3 +78,20 @@ export async function requireAuth(
     next(error);
   }
 }
+
+export async function optionalAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const rawToken = req.cookies?.[SESSION_COOKIE_NAME] as string | undefined;
+  if (!rawToken) {
+    return next();
+  }
+  return requireAuth(req, res, (err) => {
+    if (err) {
+      req.user = undefined;
+    }
+    next();
+  });
+}
