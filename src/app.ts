@@ -8,6 +8,7 @@ import { ForbiddenError } from './lib/errors.ts';
 import { createOriginAllowlist } from './lib/origin-allowlist.ts';
 import { errorHandler, notFoundHandler } from './middlewares/error.ts';
 import { requestId } from './middlewares/request-id.ts';
+import { requestLogger } from './middlewares/request-logger.ts';
 import { accountRouter } from './routes/account.routes.ts';
 import { adminRouter } from './routes/admin.routes.ts';
 import { authRouter } from './routes/auth.routes.ts';
@@ -46,6 +47,7 @@ export function createApp(options: AppOptions = {}): Express {
   );
 
   app.use(requestId);
+  app.use(requestLogger);
   app.use(helmet());
   app.use(createCorsMiddleware(allowlist));
   app.use(cookieParser());
