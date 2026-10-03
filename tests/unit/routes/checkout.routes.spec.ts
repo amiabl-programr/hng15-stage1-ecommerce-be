@@ -94,11 +94,24 @@ const validPayload = {
 
 describe('checkout routes', () => {
   describe('POST /api/orders', () => {
-    it('allows guest checkout with no cookie and returns 201 with derived order totals', async () => {
+    it('returns 401 when unauthenticated', async () => {
+      const response = await request(app())
+        .post('/api/orders')
+        .send(validPayload);
+
+      expect(response.status).toBe(401);
+      expect(response.body.error.code).toBe('UNAUTHORIZED');
+    });
+
+    it('allows checkout for authenticated user and returns 201 with derived order totals', async () => {
+      jest
+        .spyOn(sessionModel, 'findActiveSessionByTokenHash')
+        .mockResolvedValueOnce(mockCustomerSession);
       jest.spyOn(checkoutService, 'createOrder').mockResolvedValueOnce(sampleOrder);
 
       const response = await request(app())
         .post('/api/orders')
+        .set('Cookie', `${SESSION_COOKIE_NAME}=${customerToken}`)
         .send(validPayload);
 
       expect(response.status).toBe(201);
@@ -106,9 +119,16 @@ describe('checkout routes', () => {
       expect(response.body.order.id).toBe(sampleOrder.id);
       expect(response.body.order.subtotal).toBe(100000);
       expect(response.body.order.total).toBe(115000);
+      expect(checkoutService.createOrder).toHaveBeenCalledWith(
+        validPayload,
+        'cust-uuid-1',
+      );
     });
 
     it('rejects bodies with injected money fields (subtotal, total, deliveryFee)', async () => {
+      jest
+        .spyOn(sessionModel, 'findActiveSessionByTokenHash')
+        .mockResolvedValueOnce(mockCustomerSession);
       const maliciousPayload = {
         ...validPayload,
         subtotal: 100,
@@ -118,6 +138,7 @@ describe('checkout routes', () => {
 
       const response = await request(app())
         .post('/api/orders')
+        .set('Cookie', `${SESSION_COOKIE_NAME}=${customerToken}`)
         .send(maliciousPayload);
 
       expect(response.status).toBe(400);
@@ -125,6 +146,9 @@ describe('checkout routes', () => {
     });
 
     it('returns 400 with fields array when item quantity is invalid', async () => {
+      jest
+        .spyOn(sessionModel, 'findActiveSessionByTokenHash')
+        .mockResolvedValueOnce(mockCustomerSession);
       const invalidQuantityPayload = {
         ...validPayload,
         items: [
@@ -137,6 +161,7 @@ describe('checkout routes', () => {
 
       const response = await request(app())
         .post('/api/orders')
+        .set('Cookie', `${SESSION_COOKIE_NAME}=${customerToken}`)
         .send(invalidQuantityPayload);
 
       expect(response.status).toBe(400);

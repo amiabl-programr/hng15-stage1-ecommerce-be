@@ -61,10 +61,20 @@ function toAppError(error: unknown): AppError {
 }
 
 function describeCause(cause: unknown): string | undefined {
-  if (cause === undefined) {
+  if (cause === undefined || cause === null) {
     return undefined;
   }
-  return cause instanceof Error ? `${cause.name}: ${cause.message}` : String(cause);
+  if (cause instanceof Error) {
+    return `${cause.name}: ${cause.message}`;
+  }
+  if (typeof cause === 'object') {
+    try {
+      return JSON.stringify(cause);
+    } catch {
+      return String(cause);
+    }
+  }
+  return String(cause);
 }
 
 /**

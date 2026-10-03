@@ -15,6 +15,10 @@ export async function processOutboxBatch(batchSize = 10): Promise<{ processed: n
     const messages = await outboxModel.findPendingOutboxMessages(batchSize);
     processed = messages.length;
 
+    if (processed > 0) {
+      logger.info('processing email outbox batch', { count: processed });
+    }
+
     for (const msg of messages) {
       const result = await mailClient.sendMail({
         to: msg.to_email,
@@ -27,6 +31,12 @@ export async function processOutboxBatch(batchSize = 10): Promise<{ processed: n
         await outboxModel.markOutboxSent(msg.id).catch((err) => {
           logger.error('failed to mark outbox message sent', { id: msg.id, err: String(err) });
         });
+        logger.info('outbox email delivered successfully', {
+          id: msg.id,
+          to: msg.to_email,
+          subject: msg.subject,
+          durationMs: result.durationMs,
+        });
         sent++;
       } else {
         const nextAttempt = msg.attempts + 1;
@@ -35,11 +45,25 @@ export async function processOutboxBatch(batchSize = 10): Promise<{ processed: n
           .catch((err) => {
             logger.error('failed to update outbox message attempt', { id: msg.id, err: String(err) });
           });
+        logger.error('outbox email delivery attempt failed', {
+          id: msg.id,
+          to: msg.to_email,
+          attempt: nextAttempt,
+          error: result.error,
+        });
         failed++;
       }
     }
+
+    if (processed > 0) {
+      logger.info('email outbox batch finished', { processed, sent, failed });
+    }
   } catch (error) {
-    logger.error('outbox worker batch error', { error: String(error) });
+    const cause = error instanceof Error && 'cause' in error ? error.cause : undefined;
+    logger.error('outbox worker batch error', {
+      error: error instanceof Error ? error.message : String(error),
+      cause: typeof cause === 'object' && cause !== null ? JSON.stringify(cause) : (cause !== undefined ? String(cause) : undefined),
+    });
   }
 
   return { processed, sent, failed };

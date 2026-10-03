@@ -18,7 +18,7 @@ export async function createOrder(
 ): Promise<void> {
   try {
     const input = CreateOrderRequestSchema.parse(req.body);
-    const order = await checkoutService.createOrder(input, req.user?.id ?? null);
+    const order = await checkoutService.createOrder(input, req.user!.id);
     res.status(201).json({ success: true, order });
   } catch (error) {
     next(error);

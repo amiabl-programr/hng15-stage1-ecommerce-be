@@ -16,6 +16,7 @@ import {
   getFabricationInquirySubject,
   renderFabricationInquiryHtml,
 } from '../providers/mail/templates/fabrication-inquiry.ts';
+import { mailClient } from '../providers/mail/index.ts';
 
 export function mapToFabricationRow(row: FabricationRequestRow) {
   return {
@@ -69,6 +70,13 @@ export async function submitFabricationRequest(
       html_body: html,
     })
     .catch(() => undefined);
+
+  // Send direct email immediately
+  void mailClient.sendMail({
+    to: input.email,
+    subject,
+    html,
+  }).catch(() => undefined);
 
   return {
     success: true,

@@ -15,6 +15,12 @@ import {
   type OrderItemRow,
   type OrderWithItems,
 } from '../models/order.model.ts';
+import { outboxModel } from '../models/outbox.model.ts';
+import {
+  getOrderConfirmationSubject,
+  renderOrderConfirmationHtml,
+} from '../providers/mail/templates/order-confirmation.ts';
+import { logger } from '../lib/logger.ts';
 
 export function mapToOrderItem(item: OrderItemRow): OrderItem {
   let customSpecs: CustomSpecs | null = null;
@@ -76,7 +82,7 @@ export function mapToOrder(row: OrderWithItems): Order {
 
 export async function createOrder(
   request: CreateOrderRequest,
-  profileId: string | null = null,
+  profileId: string,
 ): Promise<Order> {
   // Call create_order RPC which handles pricing, stock checks, sequence and email outbox
   const created = await orderModel.createOrderRpc(
@@ -90,7 +96,44 @@ export async function createOrder(
     throw new NotFoundError('Order created but could not be retrieved');
   }
 
-  return mapToOrder(fullOrder);
+  const order = mapToOrder(fullOrder);
+
+  logger.info('order placed successfully', {
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    customerEmail: order.customerEmail,
+    itemCount: order.items.length,
+    subtotal: order.subtotal,
+    deliveryFee: order.deliveryFee,
+    total: order.total,
+  });
+
+  // Queue order confirmation email via transactional outbox
+  try {
+    const subject = getOrderConfirmationSubject(order.orderNumber);
+    const html = renderOrderConfirmationHtml(order);
+
+    await outboxModel.insertOutboxMessage({
+      template: 'order-confirmation',
+      to_email: order.customerEmail,
+      subject,
+      html_body: html,
+      order_id: order.id,
+    });
+
+    logger.info('order confirmation queued in outbox', {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      to: order.customerEmail,
+    });
+  } catch (err) {
+    logger.error('failed to queue order confirmation email in outbox', {
+      orderId: order.id,
+      err: String(err),
+    });
+  }
+
+  return order;
 }
 
 export interface UserContext {

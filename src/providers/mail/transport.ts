@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 import { env } from '../../config/env.ts';
 
@@ -12,7 +13,7 @@ export function getMailTransporter(): Transporter {
 
   const config = env();
 
-  transporterInstance = nodemailer.createTransport({
+  const options: SMTPTransport.Options = {
     host: config.smtpHost,
     port: config.smtpPort,
     secure: config.smtpSecure,
@@ -20,7 +21,12 @@ export function getMailTransporter(): Transporter {
       user: config.smtpUser,
       pass: config.smtpAppPassword,
     },
-  });
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  };
+
+  transporterInstance = nodemailer.createTransport(options);
 
   return transporterInstance;
 }
