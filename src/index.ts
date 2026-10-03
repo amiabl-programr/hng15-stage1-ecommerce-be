@@ -11,8 +11,20 @@ import { closeServer } from './lib/shutdown.ts';
 
 const { port, nodeEnv } = env();
 
-const server = createApp().listen(port, () => {
-  logger.info('api listening', { port, env: nodeEnv });
+const server = createApp().listen(port, '0.0.0.0', () => {
+  logger.info('api listening', { port, host: '0.0.0.0', env: nodeEnv });
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('unhandled promise rejection', {
+    reason: reason instanceof Error ? reason.stack || reason.message : String(reason),
+  });
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('uncaught exception', {
+    error: error.stack || error.message,
+  });
 });
 
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
