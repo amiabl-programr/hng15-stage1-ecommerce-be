@@ -16,6 +16,9 @@ import {
   hashSessionToken,
 } from '../lib/session.ts';
 import {
+  orderModel,
+} from '../models/order.model.ts';
+import {
   type ProfileRow,
   profileModel,
 } from '../models/profile.model.ts';
@@ -197,11 +200,31 @@ export async function revokeUserSession(
   }
 }
 
+export async function getAccountOverview(profileId: string) {
+  const orderList = await orderModel.findRecentOrdersByProfileId(profileId, 5);
+  const orderCount = orderList.length;
+  const totalSpent = orderList.reduce((sum, o) => sum + Number(o.total_amount), 0);
+  const recentOrders = orderList.map((o) => ({
+    id: o.id,
+    orderNumber: o.order_number,
+    status: o.status,
+    total: Number(o.total_amount),
+    createdAt: o.created_at,
+  }));
+
+  return {
+    orderCount,
+    totalSpent,
+    recentOrders,
+  };
+}
+
 export const authService = {
   initializeGoogleAuth,
   handleGoogleCallback,
   logout,
   getMe,
+  getAccountOverview,
   listUserSessions,
   revokeUserSession,
 };

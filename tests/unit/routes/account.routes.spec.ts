@@ -48,6 +48,20 @@ describe('account routes', () => {
     });
 
     it('returns overview stats and recent orders when authenticated', async () => {
+      jest.spyOn(authService, 'getAccountOverview').mockResolvedValueOnce({
+        orderCount: 2,
+        totalSpent: 12000,
+        recentOrders: [
+          {
+            id: 'order-1',
+            orderNumber: 'ORD-202610-0001',
+            status: 'completed',
+            total: 12000,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      });
+
       const response = await request(app())
         .get('/api/account/overview')
         .set('Cookie', [`${SESSION_COOKIE_NAME}=${token}`]);

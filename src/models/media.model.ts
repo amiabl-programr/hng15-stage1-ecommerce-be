@@ -1,8 +1,8 @@
 import { db, publicDb } from '../config/supabase.ts';
 import type { Database } from '../config/database.types.ts';
-import type { ImageRole } from '../contracts/schemas/common.ts';
 import { InternalError } from '../lib/errors.ts';
 
+export type ImageRole = Database['public']['Enums']['image_role'];
 export type ProductImagePublicRow = Database['public']['Views']['product_images_public']['Row'];
 export type CategoryImagePublicRow = Database['public']['Views']['category_images_public']['Row'];
 export type ProductImageRow = Database['public']['Tables']['product_images']['Row'];

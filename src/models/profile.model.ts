@@ -1,6 +1,8 @@
 import { db } from '../config/supabase.ts';
-import type { UserRole } from '../contracts/schemas/common.ts';
+import type { Database } from '../config/database.types.ts';
 import { InternalError } from '../lib/errors.ts';
+
+export type UserRole = Database['public']['Enums']['user_role'];
 
 export interface ProfileRow {
   id: string;

@@ -3,13 +3,11 @@ import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 /**
- * Layer boundaries from notes.md §3. Enforced in Phase 13 once every layer exists;
- * the rules are declared here, disabled, so turning them on is a one-line diff.
+ * Layer boundaries from notes.md §3:
+ * - src/models/** may not import express, contracts, or services.
+ * - src/services/** may not import express, Request, or Response.
+ * - src/routes/** may not import @supabase/supabase-js or ../config/supabase.
  */
-const layerRules = {
-  'no-restricted-imports': 'off',
-  'no-restricted-syntax': 'off',
-};
 
 export default tseslint.config(
   {
@@ -33,7 +31,96 @@ export default tseslint.config(
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      ...layerRules,
+    },
+  },
+  {
+    files: ['src/models/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                'express',
+                'express/*',
+                '**/contracts/**',
+                '../contracts/**',
+                '**/services/**',
+                '../services/**',
+                '**/controllers/**',
+                '../controllers/**',
+              ],
+              message: 'src/models/** may not import express, contracts, services, or controllers.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/services/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                'express',
+                'express/*',
+                '**/routes/**',
+                '../routes/**',
+                '**/controllers/**',
+                '../controllers/**',
+              ],
+              message: 'src/services/** may not import express, Request, Response, routes, or controllers.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/controllers/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@supabase/supabase-js',
+                '**/config/supabase*',
+                '../config/supabase*',
+              ],
+              message:
+                'src/controllers/** may not import @supabase/supabase-js or ../config/supabase.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/routes/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@supabase/supabase-js',
+                '**/config/supabase*',
+                '../config/supabase*',
+              ],
+              message:
+                'src/routes/** may not import @supabase/supabase-js or ../config/supabase.',
+            },
+          ],
+        },
+      ],
     },
   },
   {

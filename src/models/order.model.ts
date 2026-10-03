@@ -1,8 +1,8 @@
 import { db } from '../config/supabase.ts';
 import type { Database, Json } from '../config/database.types.ts';
-import type { OrderStatus } from '../contracts/schemas/common.ts';
 import { InsufficientStockError, InternalError, ValidationError } from '../lib/errors.ts';
 
+export type OrderStatus = Database['public']['Enums']['order_status'];
 export type OrderRow = Database['public']['Tables']['orders']['Row'];
 export type OrderItemRow = Database['public']['Tables']['order_items']['Row'];
 export type OrderWithItems = OrderRow & { order_items: OrderItemRow[] };
@@ -117,8 +117,27 @@ export async function listOrdersWithItems(
   }));
 }
 
+export async function findRecentOrdersByProfileId(
+  profileId: string,
+  limit = 5,
+): Promise<OrderRow[]> {
+  const { data, error } = await db
+    .from('orders')
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new InternalError(error);
+  }
+
+  return (data as OrderRow[]) ?? [];
+}
+
 export const orderModel = {
   createOrderRpc,
   findOrderWithItemsById,
   listOrdersWithItems,
+  findRecentOrdersByProfileId,
 };

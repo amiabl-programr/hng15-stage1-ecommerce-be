@@ -18,10 +18,12 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --selectProjects unit",
     "test:integration": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --selectProjects integration --runInBand",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --selectProjects unit --watch",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm check:secrets",
     "db:apply": "tsx scripts/db-apply.ts",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
-    "openapi:check": "tsx scripts/generate-openapi.ts --check"
+    "openapi:check": "tsx scripts/generate-openapi.ts --check",
+    "check:secrets": "tsx scripts/check-no-secrets.ts",
+    "check:contracts": "tsx scripts/check-contracts.ts"
   },
   "devEngines": {
     "packageManager": {
