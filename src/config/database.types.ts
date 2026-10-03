@@ -125,7 +125,7 @@ export type Database = {
       products: {
         Row: {
           id: string;
-          category_id: string;
+          category_id: string | null;
           name: string;
           slug: string;
           description: string;
@@ -140,7 +140,7 @@ export type Database = {
         };
         Insert: {
           id?: string | undefined;
-          category_id: string;
+          category_id?: string | null | undefined;
           name: string;
           slug: string;
           description: string;
@@ -155,7 +155,7 @@ export type Database = {
         };
         Update: {
           id?: string | undefined;
-          category_id?: string | undefined;
+          category_id?: string | null | undefined;
           name?: string | undefined;
           slug?: string | undefined;
           description?: string | undefined;
@@ -476,6 +476,60 @@ export type Database = {
           last_error?: string | null | undefined;
           sent_at?: string | null | undefined;
           created_at?: string | undefined;
+        };
+        Relationships: [];
+      };
+      fabrication_requests: {
+        Row: {
+          id: string;
+          service_type: string;
+          full_name: string;
+          email: string;
+          phone: string;
+          city: string;
+          state: string;
+          description: string;
+          measurements: string | null;
+          budget: number | string | null;
+          preferred_contact: string;
+          status: string;
+          estimated_quote: number | string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string | undefined;
+          service_type: string;
+          full_name: string;
+          email: string;
+          phone: string;
+          city: string;
+          state: string;
+          description: string;
+          measurements?: string | null | undefined;
+          budget?: number | string | null | undefined;
+          preferred_contact?: string | undefined;
+          status?: string | undefined;
+          estimated_quote?: number | string | null | undefined;
+          created_at?: string | undefined;
+          updated_at?: string | undefined;
+        };
+        Update: {
+          id?: string | undefined;
+          service_type?: string | undefined;
+          full_name?: string | undefined;
+          email?: string | undefined;
+          phone?: string | undefined;
+          city?: string | undefined;
+          state?: string | undefined;
+          description?: string | undefined;
+          measurements?: string | null | undefined;
+          budget?: number | string | null | undefined;
+          preferred_contact?: string | undefined;
+          status?: string | undefined;
+          estimated_quote?: number | string | null | undefined;
+          created_at?: string | undefined;
+          updated_at?: string | undefined;
         };
         Relationships: [];
       };
