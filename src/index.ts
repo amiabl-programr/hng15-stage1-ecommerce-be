@@ -27,11 +27,19 @@ process.on('uncaughtException', (error) => {
   });
 });
 
+let shuttingDown = false;
+
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.on(signal, () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     logger.info('shutdown signal received', { signal });
-    void closeServer(server, { log: logger.info }).then(() => {
-      process.exit(0);
-    });
+    void closeServer(server, { log: logger.info })
+      .catch((err) => {
+        logger.error('error during shutdown', { error: String(err) });
+      })
+      .finally(() => {
+        process.exit(0);
+      });
   });
 }
