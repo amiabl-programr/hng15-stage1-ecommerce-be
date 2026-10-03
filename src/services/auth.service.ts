@@ -219,9 +219,50 @@ export async function getAccountOverview(profileId: string) {
   };
 }
 
+export async function emailLogin(
+  email: string,
+  metadata?: { userAgent?: string | null | undefined; ip?: string | null | undefined } | undefined,
+): Promise<{ profile: ProfileRow; sessionToken: string; expiresAt: Date }> {
+  const config = env();
+  const lowerEmail = email.trim().toLowerCase();
+  const isBootstrapAdmin = config.bootstrapAdminEmails
+    .map((e) => e.toLowerCase())
+    .includes(lowerEmail);
+
+  let profile = await profileModel.findProfileByEmail(lowerEmail);
+  if (!profile) {
+    const namePart = lowerEmail.split('@')[0] || 'User';
+    const fullName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    profile = await profileModel.createProfile({
+      email: lowerEmail,
+      fullName,
+      role: isBootstrapAdmin ? 'admin' : 'customer',
+    });
+  }
+
+  const sessionToken = generateSessionToken();
+  const tokenHash = hashSessionToken(sessionToken);
+  const expiresAt = new Date(Date.now() + config.sessionTtlDays * 24 * 60 * 60 * 1000);
+
+  await sessionModel.createSession({
+    profileId: profile.id,
+    tokenHash,
+    expiresAt,
+    userAgent: metadata?.userAgent ?? null,
+    ip: metadata?.ip ?? null,
+  });
+
+  return {
+    profile,
+    sessionToken,
+    expiresAt,
+  };
+}
+
 export const authService = {
   initializeGoogleAuth,
   handleGoogleCallback,
+  emailLogin,
   logout,
   getMe,
   getAccountOverview,
