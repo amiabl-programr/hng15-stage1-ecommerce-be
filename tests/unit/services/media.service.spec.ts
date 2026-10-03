@@ -18,6 +18,7 @@ const mockProduct = {
   min_order_quantity: 1,
   is_active: true,
   product_type: 'dimensioned' as const,
+  unit: 'metre' as const,
   unit_type: 'metre' as const,
   profile_kind: 'longspan' as const,
   created_at: new Date().toISOString(),

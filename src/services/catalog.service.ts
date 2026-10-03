@@ -1,9 +1,19 @@
 import { env } from '../config/env.ts';
-import type { Category, MediaAsset, Product, ProductListQuery } from '../contracts/schemas/catalog.ts';
+import type {
+  Category,
+  MediaAsset,
+  Product,
+  ProductListQuery,
+  ProductVariant,
+} from '../contracts/schemas/catalog.ts';
 import { NotFoundError, ValidationError } from '../lib/errors.ts';
 import { categoryModel } from '../models/category.model.ts';
 import { mediaModel, type CategoryImagePublicRow, type ProductImagePublicRow } from '../models/media.model.ts';
-import { productModel, type ProductPublicRow } from '../models/product.model.ts';
+import {
+  productModel,
+  type ProductPublicRow,
+  type ProductVariantRow,
+} from '../models/product.model.ts';
 
 export interface KeysetCursor {
   createdAt: string;
@@ -73,14 +83,30 @@ function mapCategoryMedia(image: CategoryImagePublicRow): MediaAsset {
   };
 }
 
+function mapProductVariant(v: ProductVariantRow): ProductVariant {
+  return {
+    id: v.id,
+    name: v.name,
+    sku: v.sku,
+    priceOverride: v.price_override !== null ? Number(v.price_override) : null,
+    stockQuantity: v.stock_quantity,
+    isActive: v.is_active,
+  };
+}
+
 function assembleProduct(
   p: ProductPublicRow,
   images: ProductImagePublicRow[],
   category: Category | null,
+  variants: ProductVariantRow[] = [],
 ): Product {
   const media = images
     .filter((img) => img.product_id === p.id)
     .map((img) => mapProductMedia(img, p.name, p.profile_kind));
+
+  const productVariants = variants
+    .filter((v) => v.product_id === p.id)
+    .map(mapProductVariant);
 
   return {
     id: p.id,
@@ -89,12 +115,13 @@ function assembleProduct(
     description: p.description ?? null,
     profileKind: p.profile_kind,
     productType: p.product_type,
-    unitType: p.unit_type,
+    unitType: p.unit ?? p.unit_type ?? 'piece',
     basePrice: Number(p.base_price),
     minOrderQuantity: p.min_order_quantity,
     isActive: p.is_active,
     category,
     media,
+    variants: productVariants,
   };
 }
 
@@ -156,11 +183,14 @@ export async function listProducts(
   }
 
   const productIds = productRows.map((p) => p.id);
-  const images = await mediaModel.findPublicImagesByProductIds(productIds);
+  const [images, variants] = await Promise.all([
+    mediaModel.findPublicImagesByProductIds(productIds),
+    productModel.findVariantsByProductIds(productIds),
+  ]);
 
   const items = productRows.map((p) => {
     const cat = categoryMap.get(p.category_id) ?? null;
-    return assembleProduct(p, images, cat);
+    return assembleProduct(p, images, cat, variants);
   });
 
   return { items, nextCursor };
@@ -174,11 +204,14 @@ export async function getFeaturedProducts(): Promise<Product[]> {
   const categoryMap = new Map(allCats.map((c) => [c.id, c]));
 
   const productIds = rawProducts.map((p) => p.id);
-  const images = await mediaModel.findPublicImagesByProductIds(productIds);
+  const [images, variants] = await Promise.all([
+    mediaModel.findPublicImagesByProductIds(productIds),
+    productModel.findVariantsByProductIds(productIds),
+  ]);
 
   return rawProducts.map((p) => {
     const cat = categoryMap.get(p.category_id) ?? null;
-    return assembleProduct(p, images, cat);
+    return assembleProduct(p, images, cat, variants);
   });
 }
 
@@ -202,8 +235,11 @@ export async function getProductBySlug(slug: string): Promise<Product> {
     }
   }
 
-  const images = await mediaModel.findPublicImagesByProductIds([p.id]);
-  return assembleProduct(p, images, category);
+  const [images, variants] = await Promise.all([
+    mediaModel.findPublicImagesByProductIds([p.id]),
+    productModel.findVariantsByProductIds([p.id]),
+  ]);
+  return assembleProduct(p, images, category, variants);
 }
 
 export const catalogService = {

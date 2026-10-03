@@ -26,6 +26,7 @@ import {
   ProductBySlugSchema as productBySlug,
   ProductListSchema as productList,
   ProductSchema as product,
+  ProductVariantSchema as productVariant,
 } from './schemas/catalog.ts';
 import {
   CustomerSchema as customer,
@@ -134,6 +135,7 @@ export const COMPONENT_SCHEMAS: readonly SchemaEntry[] = [
   entry('MediaAsset', mediaAsset),
   entry('Category', category),
   entry('CategoryList', categoryList),
+  entry('ProductVariant', productVariant),
   entry('Product', product),
   entry('ProductList', productList),
   entry('ProductBySlug', productBySlug),

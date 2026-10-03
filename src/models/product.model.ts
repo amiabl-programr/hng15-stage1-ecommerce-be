@@ -3,6 +3,7 @@ import type { Database } from '../config/database.types.ts';
 import { InternalError } from '../lib/errors.ts';
 
 export type ProductPublicRow = Database['public']['Views']['products_public']['Row'];
+export type ProductVariantRow = Database['public']['Tables']['product_variants']['Row'];
 
 export interface ListProductsOptions {
   categoryId?: string | undefined;
@@ -88,9 +89,28 @@ export async function findProductById(
   return (data as Database['public']['Tables']['products']['Row'] | null) ?? null;
 }
 
+export async function findVariantsByProductIds(
+  productIds: string[],
+): Promise<ProductVariantRow[]> {
+  if (productIds.length === 0) return [];
+
+  const { data, error } = await publicDb
+    .from('product_variants')
+    .select('*')
+    .in('product_id', productIds)
+    .eq('is_active', true);
+
+  if (error) {
+    throw new InternalError(error);
+  }
+
+  return (data as ProductVariantRow[]) ?? [];
+}
+
 export const productModel = {
   listPublicProducts,
   findPublicProductBySlug,
   listFeaturedProducts,
   findProductById,
+  findVariantsByProductIds,
 };

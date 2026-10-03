@@ -36,6 +36,16 @@ export const CategorySchema = z.object({
 });
 export type Category = z.infer<typeof CategorySchema>;
 
+export const ProductVariantSchema = z.object({
+  id: UuidSchema,
+  name: z.string().min(1),
+  sku: z.string().min(1),
+  priceOverride: MoneySchema.nullable().optional(),
+  stockQuantity: z.number().int().nonnegative(),
+  isActive: z.boolean(),
+});
+export type ProductVariant = z.infer<typeof ProductVariantSchema>;
+
 export const ProductSchema = z.object({
   id: UuidSchema,
   name: z.string().min(1),
@@ -49,6 +59,7 @@ export const ProductSchema = z.object({
   isActive: z.boolean(),
   category: CategorySchema.nullable(),
   media: z.array(MediaAssetSchema),
+  variants: z.array(ProductVariantSchema).optional(),
 });
 export type Product = z.infer<typeof ProductSchema>;
 

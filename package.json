@@ -23,7 +23,8 @@
     "openapi:generate": "tsx scripts/generate-openapi.ts",
     "openapi:check": "tsx scripts/generate-openapi.ts --check",
     "check:secrets": "tsx scripts/check-no-secrets.ts",
-    "check:contracts": "tsx scripts/check-contracts.ts"
+    "check:contracts": "tsx scripts/check-contracts.ts",
+    "seed": "tsx scripts/seed-catalogue.ts"
   },
   "devEngines": {
     "packageManager": {
