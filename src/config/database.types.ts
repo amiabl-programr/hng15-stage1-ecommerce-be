@@ -491,6 +491,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      cart_items: {
+        Row: {
+          id: string;
+          profile_id: string;
+          product_id: string;
+          variant_id: string | null;
+          quantity: number;
+          custom_specs: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string | undefined;
+          profile_id: string;
+          product_id: string;
+          variant_id?: string | null | undefined;
+          quantity: number;
+          custom_specs?: Json | null | undefined;
+          created_at?: string | undefined;
+          updated_at?: string | undefined;
+        };
+        Update: {
+          id?: string | undefined;
+          profile_id?: string | undefined;
+          product_id?: string | undefined;
+          variant_id?: string | null | undefined;
+          quantity?: number | undefined;
+          custom_specs?: Json | null | undefined;
+          created_at?: string | undefined;
+          updated_at?: string | undefined;
+        };
+        Relationships: [];
+      };
       fabrication_requests: {
         Row: {
           id: string;

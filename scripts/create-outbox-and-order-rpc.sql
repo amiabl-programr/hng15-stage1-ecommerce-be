@@ -1,3 +1,30 @@
+-- Table: public.email_outbox
+CREATE TABLE IF NOT EXISTS public.email_outbox (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  template TEXT NOT NULL,
+  to_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  html_body TEXT NOT NULL,
+  text_body TEXT,
+  order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  last_error TEXT,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS email_outbox_pending_idx 
+  ON public.email_outbox (created_at) 
+  WHERE sent_at IS NULL AND attempts < 5;
+
+-- Enable RLS and grant permissions
+ALTER TABLE public.email_outbox ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.email_outbox TO service_role;
+GRANT ALL ON public.email_outbox TO postgres;
+GRANT ALL ON public.email_outbox TO authenticated;
+GRANT ALL ON public.email_outbox TO anon;
+
 -- Sequence for human-readable order numbers
 CREATE SEQUENCE IF NOT EXISTS public.order_number_seq START WITH 1001;
 
@@ -174,3 +201,6 @@ $$;
 GRANT EXECUTE ON FUNCTION public.create_order(UUID, JSONB, JSONB) TO service_role;
 GRANT EXECUTE ON FUNCTION public.create_order(UUID, JSONB, JSONB) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_order(UUID, JSONB, JSONB) TO anon;
+
+-- Refresh PostgREST schema cache immediately
+NOTIFY pgrst, 'reload schema';

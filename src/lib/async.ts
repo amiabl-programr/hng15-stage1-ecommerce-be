@@ -6,7 +6,7 @@ import { mailClient } from '../providers/mail/index.ts';
  * Drains pending messages from email_outbox table.
  * Exponential backoff up to 5 attempts. Never throws.
  */
-export async function processOutboxBatch(batchSize = 10): Promise<{ processed: number; sent: number; failed: number }> {
+export async function processOutboxBatch(batchSize = 10): Promise<{ processed: number; sent: number; failed: number; success: boolean }> {
   let processed = 0;
   let sent = 0;
   let failed = 0;
@@ -58,32 +58,56 @@ export async function processOutboxBatch(batchSize = 10): Promise<{ processed: n
     if (processed > 0) {
       logger.info('email outbox batch finished', { processed, sent, failed });
     }
+    return { processed, sent, failed, success: true };
   } catch (error) {
     const cause = error instanceof Error && 'cause' in error ? error.cause : undefined;
     logger.error('outbox worker batch error', {
       error: error instanceof Error ? error.message : String(error),
       cause: typeof cause === 'object' && cause !== null ? JSON.stringify(cause) : (cause !== undefined ? String(cause) : undefined),
     });
+    return { processed, sent, failed, success: false };
   }
-
-  return { processed, sent, failed };
 }
 
-export function startOutboxWorker(intervalMs = 5000): { stop: () => void } {
+export function startOutboxWorker(baseIntervalMs = 5000): { stop: () => void } {
   let isRunning = false;
+  let isStopped = false;
+  let consecutiveErrors = 0;
+  let timer: NodeJS.Timeout | null = null;
 
-  const timer = setInterval(() => {
-    if (isRunning) return;
-    isRunning = true;
-    void processOutboxBatch()
-      .finally(() => {
-        isRunning = false;
-      });
-  }, intervalMs);
+  const scheduleNext = (delayMs: number) => {
+    if (isStopped) return;
+    timer = setTimeout(() => {
+      if (isRunning || isStopped) return;
+      isRunning = true;
+      void (async () => {
+        try {
+          const res = await processOutboxBatch();
+          if (res.success) {
+            consecutiveErrors = 0;
+            scheduleNext(baseIntervalMs);
+          } else {
+            consecutiveErrors++;
+            const backoff = Math.min(baseIntervalMs * Math.pow(2, Math.min(consecutiveErrors, 4)), 60000);
+            scheduleNext(backoff);
+          }
+        } catch {
+          consecutiveErrors++;
+          const backoff = Math.min(baseIntervalMs * Math.pow(2, Math.min(consecutiveErrors, 4)), 60000);
+          scheduleNext(backoff);
+        } finally {
+          isRunning = false;
+        }
+      })();
+    }, delayMs);
+  };
+
+  scheduleNext(baseIntervalMs);
 
   return {
     stop: () => {
-      clearInterval(timer);
+      isStopped = true;
+      if (timer) clearTimeout(timer);
     },
   };
 }
