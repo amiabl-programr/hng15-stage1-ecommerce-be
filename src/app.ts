@@ -12,6 +12,7 @@ import { requestLogger } from './middlewares/request-logger.ts';
 import { accountRouter } from './routes/account.routes.ts';
 import { adminRouter } from './routes/admin.routes.ts';
 import { authRouter } from './routes/auth.routes.ts';
+import { cartRouter } from './routes/cart.routes.ts';
 import { catalogRouter } from './routes/catalog.routes.ts';
 import { checkoutRouter } from './routes/checkout.routes.ts';
 import { fabricationRouter } from './routes/fabrication.routes.ts';
@@ -56,6 +57,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(healthRouter);
   app.use(authRouter);
   app.use(accountRouter);
+  app.use(cartRouter);
   app.use(catalogRouter);
   app.use(mediaRouter);
   app.use(checkoutRouter);

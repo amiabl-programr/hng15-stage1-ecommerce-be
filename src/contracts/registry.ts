@@ -39,6 +39,12 @@ import {
   CreateOrderResponseSchema as createOrderResponse,
 } from './schemas/checkout.ts';
 import {
+  CartItemSchema as cartItem,
+  AddCartItemRequestSchema as addCartItemRequest,
+  UpdateCartItemRequestSchema as updateCartItemRequest,
+  CartResponseSchema as cartResponse,
+} from './schemas/cart.ts';
+import {
   ErrorBodySchema as errorBody,
   ErrorCodeSchema as errorCode,
   ErrorEnvelopeSchema as errorEnvelope,
@@ -157,6 +163,12 @@ export const COMPONENT_SCHEMAS: readonly SchemaEntry[] = [
   entry('Order', order),
   entry('CreateOrderResponse', createOrderResponse),
   entry('OrderList', orderList),
+
+  // cart
+  entry('CartItem', cartItem),
+  entry('AddCartItemRequest', addCartItemRequest),
+  entry('UpdateCartItemRequest', updateCartItemRequest),
+  entry('CartResponse', cartResponse),
 
   // fabrication
   entry('FabricationRequest', fabricationRequest),

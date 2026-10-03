@@ -2,6 +2,7 @@ export * from './schemas/common.ts';
 export * from './schemas/auth.ts';
 export * from './schemas/catalog.ts';
 export * from './schemas/checkout.ts';
+export * from './schemas/cart.ts';
 export * from './schemas/media.ts';
 export * from './schemas/fabrication.ts';
 export * from './schemas/admin.ts';

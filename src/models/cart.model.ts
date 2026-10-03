@@ -8,54 +8,33 @@ export type ProductType = Database['public']['Enums']['product_type'];
 
 export interface CartItemWithProduct extends CartItemRow {
   product: {
+    id: string;
     name: string;
     slug: string;
     base_price: number;
     product_type: ProductType;
   };
   variant: {
+    id: string;
     name: string;
-    price_adjustment: number;
+    price_override: number | null;
   } | null;
   media: {
     media_url: string;
   } | null;
 }
 
-export async function getCartByProfileId(profileId: string): Promise<CartItemWithProduct[]> {
+export async function getCartByProfileId(profileId: string): Promise<CartItemRow[]> {
   const { data, error } = await (db.from('cart_items') as any)
-    .select(`
-      *,
-      product:products ( name, slug, base_price, product_type ),
-      variant:product_variants ( name, price_adjustment ),
-      product_images ( image_url, role )
-    `)
-    .eq('profile_id', profileId);
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: true });
 
   if (error) {
     throw new InternalError(error);
   }
 
-  const items = ((data as any[]) || []).map((item) => {
-    let mediaUrl: string | null = null;
-    if (item.product_images && Array.isArray(item.product_images)) {
-      const primary = item.product_images.find((m: any) => m.role === 'primary');
-      if (primary) {
-        mediaUrl = primary.image_url;
-      } else if (item.product_images.length > 0) {
-        mediaUrl = item.product_images[0].image_url;
-      }
-    }
-
-    return {
-      ...item,
-      product: Array.isArray(item.product) ? item.product[0] : item.product,
-      variant: Array.isArray(item.variant) ? item.variant[0] : item.variant,
-      media: mediaUrl ? { media_url: mediaUrl } : null,
-    };
-  });
-
-  return items as CartItemWithProduct[];
+  return (data as CartItemRow[]) || [];
 }
 
 export async function addItem(
