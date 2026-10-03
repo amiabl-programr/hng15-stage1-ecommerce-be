@@ -271,24 +271,6 @@ CREATE SEQUENCE IF NOT EXISTS public.order_number_seq START WITH 1001;
 
 -- 4. Foreign Key Constraints
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'inventory_product_id_fkey') THEN
-    ALTER TABLE public.inventory ADD CONSTRAINT inventory_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
-  END IF;
-END $$;
-
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'inventory_variant_id_fkey') THEN
-    ALTER TABLE public.inventory ADD CONSTRAINT inventory_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES public.product_variants(id) ON DELETE CASCADE;
-  END IF;
-END $$;
-
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'addresses_profile_id_fkey') THEN
-    ALTER TABLE public.addresses ADD CONSTRAINT addresses_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-  END IF;
-END $$;
-
-DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'products_category_id_fkey') THEN
     ALTER TABLE public.products ADD CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE RESTRICT;
   END IF;
@@ -420,10 +402,6 @@ CREATE INDEX idx_fabrication_profile ON public.fabrication_requests USING btree 
 CREATE INDEX idx_fabrication_order_item ON public.fabrication_requests USING btree (order_item_id);
 CREATE UNIQUE INDEX product_variants_sku_key ON public.product_variants USING btree (sku);
 CREATE INDEX idx_variants_product ON public.product_variants USING btree (product_id);
-CREATE UNIQUE INDEX uq_inventory_product_variant ON public.inventory USING btree (product_id, variant_id) NULLS NOT DISTINCT;
-CREATE INDEX idx_inventory_product ON public.inventory USING btree (product_id);
-CREATE INDEX idx_inventory_variant ON public.inventory USING btree (variant_id);
-CREATE INDEX idx_addresses_profile ON public.addresses USING btree (profile_id);
 CREATE UNIQUE INDEX sessions_token_hash_key ON public.sessions USING btree (token_hash);
 CREATE INDEX idx_sessions_token_hash ON public.sessions USING btree (token_hash);
 CREATE INDEX idx_sessions_profile_id ON public.sessions USING btree (profile_id);
