@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 
 import { env } from '../config/env.ts';
-import { ValidationError } from '../lib/errors.ts';
 import {
   SESSION_COOKIE_NAME,
   hashSessionToken,
@@ -149,51 +148,9 @@ export async function revokeSession(
   }
 }
 
-export async function emailLogin(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const email = req.body?.email;
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      throw new ValidationError('Valid email is required');
-    }
-
-    const userAgent = req.get('user-agent') ?? null;
-    const ip = req.ip ?? null;
-    const result = await authService.emailLogin(email, { userAgent, ip });
-
-    const config = env();
-    res.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
-      httpOnly: true,
-      sameSite: config.isProduction ? 'none' : 'lax',
-      path: '/',
-      secure: config.isProduction,
-      maxAge: config.sessionTtlDays * 24 * 60 * 60 * 1000,
-    });
-
-    res.json({
-      success: true,
-      user: {
-        id: result.profile.id,
-        email: result.profile.email,
-        fullName: result.profile.full_name,
-        avatarUrl: result.profile.avatar_url,
-        role: result.profile.role,
-        createdAt: result.profile.created_at,
-      },
-      sessionToken: result.sessionToken,
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
 export const authController = {
   googleAuth,
   googleCallback,
-  emailLogin,
   logout,
   getMe,
   listSessions,
