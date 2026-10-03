@@ -27,6 +27,9 @@ ENV PORT=4000
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Ensure /app directory is owned by node user
+RUN chown -R node:node /app
+
 # Copy installed node_modules from dependencies stage
 COPY --chown=node:node --from=dependencies /app/node_modules ./node_modules
 
@@ -44,5 +47,5 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:${PORT:-4000}/health || exit 1
 
-# Start the application via tsx execution
-CMD ["pnpm", "start"]
+# Start the application via tsx execution directly
+CMD ["node_modules/.bin/tsx", "src/index.ts"]
