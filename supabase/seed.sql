@@ -1,111 +1,300 @@
 -- ==============================================================================
--- Catalogue Seed: 11 Categories and 7 Products with Variants
+-- Catalogue Seed: 11 Production Categories, 17 Products (15 Physical, 2 Services), 48 Variants
+-- Strictly derived from seed_data.md
 -- ==============================================================================
 
--- 1. Insert Categories (11 Total)
+-- 1. Remove Test/Race Categories & Obsolete Slugs (§3)
+DELETE FROM public.product_variants 
+WHERE product_id IN (SELECT id FROM public.products WHERE category_id IN (
+  SELECT id FROM public.categories WHERE slug LIKE 'phase4-cat-race%' OR slug LIKE 'race-cat%'
+));
+
+DELETE FROM public.products 
+WHERE category_id IN (
+  SELECT id FROM public.categories WHERE slug LIKE 'phase4-cat-race%' OR slug LIKE 'race-cat%'
+);
+
+DELETE FROM public.categories 
+WHERE slug LIKE 'phase4-cat-race%' OR slug LIKE 'race-cat%';
+
+-- Ensure trimmers-and-gutters exists first
+INSERT INTO public.categories (name, slug, description)
+VALUES ('Trimmers & Gutters', 'trimmers-and-gutters', 'Valley gutters, roof trimmers and associated drainage components.')
+ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description;
+
+-- Reassign products and category_images pointing to trimmers-and-parapets to trimmers-and-gutters
+UPDATE public.products 
+SET category_id = (SELECT id FROM public.categories WHERE slug = 'trimmers-and-gutters')
+WHERE category_id IN (SELECT id FROM public.categories WHERE slug = 'trimmers-and-parapets');
+
+UPDATE public.category_images 
+SET category_id = (SELECT id FROM public.categories WHERE slug = 'trimmers-and-gutters')
+WHERE category_id IN (SELECT id FROM public.categories WHERE slug = 'trimmers-and-parapets');
+
+DELETE FROM public.categories WHERE slug = 'trimmers-and-parapets';
+
+-- Remove obsolete initial test product slugs not in seed_data.md
+DELETE FROM public.product_variants WHERE sku IN ('LS-050-FG', 'RC-APEX-2M', 'ACC-HEX-100');
+DELETE FROM public.product_variants WHERE product_id IN (
+  SELECT id FROM public.products WHERE slug IN (
+    'metcopo-steptile-profile-sheet',
+    'stone-coated-shake-shingle-tile',
+    'heavy-gauge-ridged-apex-cap',
+    'on-site-continuous-roll-forming-service',
+    'custom-cnc-sheet-bending-and-curving-service',
+    'self-drilling-hex-roofing-screws-pack-100'
+  )
+);
+DELETE FROM public.products WHERE slug IN (
+  'metcopo-steptile-profile-sheet',
+  'stone-coated-shake-shingle-tile',
+  'heavy-gauge-ridged-apex-cap',
+  'on-site-continuous-roll-forming-service',
+  'custom-cnc-sheet-bending-and-curving-service',
+  'self-drilling-hex-roofing-screws-pack-100'
+);
+
+-- 2. Upsert Production Categories (11 Total)
 INSERT INTO public.categories (name, slug, description)
 VALUES
-  ('Roofing Sheets', 'roofing-sheets', 'Industrial & residential continuous longspan aluminium sheets available in custom lengths.'),
-  ('Metcopo Roofing', 'metcopo-roofing', 'Classic European clay tile aesthetics engineered in high-tensile aluzinc steel.'),
-  ('Step Tiles', 'step-tiles', 'Stepped architectural panels with anti-fade exterior resin finishes.'),
-  ('Roofing Shingles', 'shingles', 'Multi-layered volcanic basalt stone-coated asphalt tiles for luxury roofs.'),
-  ('Ridge Caps & Apex', 'ridge-caps', 'Heavy-gauge apex caps to seal junctions against driving rainfall.'),
-  ('Trimmers & Gutters', 'trimmers-and-parapets', 'Valley gutters, flashing trimmers, and parapet perimeter wall copings.'),
-  ('Parapets & Flashing', 'parapets', 'Double drip edge architectural wall cappings for firewall perimeters.'),
-  ('Corrugated Sheets', 'corrugated-sheets', 'Traditional heavy-gauge sinusoidal steel sheets for industrial structures.'),
-  ('Roll Forming Services', 'roll-forming', 'Computerized on-site continuous roll forming rigs up to 30 metres unbroken.'),
-  ('Bending & Fabrication', 'bending-services', 'CNC press brake metal folding, arch curving, and bespoke trims.'),
-  ('Accessories & Fasteners', 'accessories', 'EPDM self-drilling hex fasteners, butyl waterproof tapes, and sealants.')
+  ('Roofing Sheets', 'roofing-sheets', 'Industrial and residential longspan roofing sheets available in custom lengths.'),
+  ('Metcopo Roofing', 'metcopo-roofing', 'Tile-effect roofing sheets designed for architectural residential and commercial applications.'),
+  ('Step Tiles', 'step-tiles', 'Stepped architectural roofing panels with durable exterior finishes.'),
+  ('Roofing Shingles', 'shingles', 'Multi-layered stone-coated roofing shingles for premium residential and commercial roofs.'),
+  ('Corrugated Sheets', 'corrugated-sheets', 'Traditional corrugated roofing sheets for residential, commercial and industrial structures.'),
+  ('Ridge Caps & Apex', 'ridge-caps', 'Roofing ridge and apex components for weatherproof roof junctions.'),
+  ('Trimmers & Gutters', 'trimmers-and-gutters', 'Valley gutters, roof trimmers and associated drainage components.'),
+  ('Parapets & Flashing', 'parapets', 'Parapet cappings, flashing and perimeter roofing components.'),
+  ('Accessories & Fasteners', 'accessories', 'Roofing screws, waterproofing tapes, sealants and related accessories.'),
+  ('Roll Forming Services', 'roll-forming', 'Custom continuous roll forming of roofing sheets to specified lengths and profiles.'),
+  ('Bending & Fabrication', 'bending-services', 'CNC bending, folding, curving and custom metal fabrication services.')
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description;
 
--- 2. Insert Products (7 Total)
+-- 3. Upsert Products (17 Total)
 INSERT INTO public.products (category_id, name, slug, description, base_price, min_order_quantity, is_active, product_type, unit, profile_kind)
 VALUES
+  -- 1. Premium Longspan Aluminium Roofing Sheet
   (
     (SELECT id FROM public.categories WHERE slug = 'roofing-sheets'),
     'Premium Longspan Aluminium Roofing Sheet',
     'premium-longspan-aluminium-roofing-sheet',
-    'Industrial & residential continuous longspan aluminium sheets available in custom lengths. Aluminium Alloy 3003, 900mm effective cover width, 25-year warranty, 85% solar reflectance.',
-    3800,
+    'Industrial-grade continuous longspan roofing sheet designed for residential, commercial and industrial applications. Available in multiple thicknesses, colours and custom lengths.',
+    5700,
     1,
     true,
     'dimensioned',
     'metre',
     'longspan'
   ),
+  -- 2. Premium Metcopo Roofing Sheet
   (
     (SELECT id FROM public.categories WHERE slug = 'metcopo-roofing'),
-    'Metcopo Steptile Profile Sheet',
-    'metcopo-steptile-profile-sheet',
-    'Classic European clay tile aesthetics engineered in high-tensile aluzinc steel. Aluzinc Steel, 1000mm cover width, 28mm step height, 30-year warranty.',
-    4200,
+    'Premium Metcopo Roofing Sheet',
+    'premium-metcopo-roofing-sheet',
+    'Tile-effect roofing sheet combining a traditional architectural appearance with lightweight profiled metal construction. Available in multiple thicknesses and colours.',
+    6000,
     1,
     true,
     'dimensioned',
-    'metre',
+    'sqm',
     'metcoppo'
   ),
+  -- 3. Premium Step Tile Roofing Sheet
   (
-    (SELECT id FROM public.categories WHERE slug = 'shingles'),
-    'Stone-Coated Shake Shingle Tile',
-    'stone-coated-shake-shingle-tile',
-    'Multi-layered volcanic basalt stone-coated asphalt tiles for luxury roofs. Galvalume steel core with natural volcanic basalt stone granules, 1340mm × 420mm, 50-year warranty.',
-    5400,
+    (SELECT id FROM public.categories WHERE slug = 'step-tiles'),
+    'Premium Step Tile Roofing Sheet',
+    'premium-step-tile-roofing-sheet',
+    'Stepped architectural roofing panel designed for residential and commercial roofing applications, with multiple thickness and colour options.',
+    5800,
     1,
     true,
-    'standard',
-    'piece',
+    'dimensioned',
+    'sqm',
+    'step-tile'
+  ),
+  -- 4. Heavy-Duty Corrugated Aluzinc Roofing Sheet
+  (
+    (SELECT id FROM public.categories WHERE slug = 'corrugated-sheets'),
+    'Heavy-Duty Corrugated Aluzinc Roofing Sheet',
+    'heavy-duty-corrugated-aluzinc-roofing-sheet',
+    'Traditional corrugated roofing sheet suitable for industrial, commercial and utility structures. Made from high-tensile aluzinc steel.',
+    3500,
+    1,
+    true,
+    'dimensioned',
+    'sqm',
+    'corrugated'
+  ),
+  -- 5. Premium Stone-Coated Roofing Shingles
+  (
+    (SELECT id FROM public.categories WHERE slug = 'shingles'),
+    'Premium Stone-Coated Roofing Shingles',
+    'premium-stone-coated-roofing-shingles',
+    'Stone-coated roofing shingles designed for premium residential and commercial roof applications.',
+    8500,
+    1,
+    true,
+    'dimensioned',
+    'sqm',
     'shingle'
   ),
+  -- 6. Aluminium Ridge Cap
   (
     (SELECT id FROM public.categories WHERE slug = 'ridge-caps'),
-    'Heavy-Gauge Ridged Apex Cap (2m Length)',
-    'heavy-gauge-ridged-apex-cap',
-    'Heavy-gauge apex caps to seal junctions against driving rainfall. Heavy-gauge aluminium/aluzinc, 2000mm length, 450mm girth, folded weather return lips.',
-    2800,
+    'Aluminium Ridge Cap',
+    'aluminium-ridge-cap',
+    'Roofing ridge and apex component for weatherproof roof junctions.',
+    5500,
     1,
     true,
     'standard',
     'piece',
     'ridge'
   ),
+  -- 7. Aluminium Hip Ridge Cap
+  (
+    (SELECT id FROM public.categories WHERE slug = 'ridge-caps'),
+    'Aluminium Hip Ridge Cap',
+    'aluminium-hip-ridge-cap',
+    'Aluminium hip ridge cap designed to seal angled hip roof intersections.',
+    5500,
+    1,
+    true,
+    'standard',
+    'piece',
+    'ridge'
+  ),
+  -- 8. Aluminium Upper Trimmer
+  (
+    (SELECT id FROM public.categories WHERE slug = 'trimmers-and-gutters'),
+    'Aluminium Upper Trimmer',
+    'aluminium-upper-trimmer',
+    'Precision folded aluminium upper trimmer for weatherproof perimeter and roof transitions.',
+    4500,
+    1,
+    true,
+    'standard',
+    'piece',
+    'trimmer'
+  ),
+  -- 9. Aluminium Lower Trimmer
+  (
+    (SELECT id FROM public.categories WHERE slug = 'trimmers-and-gutters'),
+    'Aluminium Lower Trimmer',
+    'aluminium-lower-trimmer',
+    'Aluminium lower trimmer for bottom-edge weather protection and rainwater run-off.',
+    4500,
+    1,
+    true,
+    'standard',
+    'piece',
+    'trimmer'
+  ),
+  -- 10. Aluminium Valley Gutter
+  (
+    (SELECT id FROM public.categories WHERE slug = 'trimmers-and-gutters'),
+    'Aluminium Valley Gutter',
+    'aluminium-valley-gutter',
+    'Heavy-duty aluminium valley gutter channel designed for roof valley rainwater discharge.',
+    6500,
+    1,
+    true,
+    'standard',
+    'piece',
+    'gutter'
+  ),
+  -- 11. Aluminium Parapet Wall Capping
+  (
+    (SELECT id FROM public.categories WHERE slug = 'parapets'),
+    'Aluminium Parapet Wall Capping',
+    'aluminium-parapet-wall-capping',
+    'Architectural aluminium parapet wall coping with drip edges for firewall moisture protection.',
+    4500,
+    1,
+    true,
+    'dimensioned',
+    'metre',
+    'flashing'
+  ),
+  -- 12. Custom Aluminium Roof Flashing
+  (
+    (SELECT id FROM public.categories WHERE slug = 'parapets'),
+    'Custom Aluminium Roof Flashing',
+    'custom-aluminium-roof-flashing',
+    'Bespoke bent aluminium flashing tailored to custom angles and perimeter roof geometry.',
+    4000,
+    1,
+    true,
+    'dimensioned',
+    'metre',
+    'flashing'
+  ),
+  -- 13. EPDM Self-Drilling Roofing Screws
+  (
+    (SELECT id FROM public.categories WHERE slug = 'accessories'),
+    'EPDM Self-Drilling Roofing Screws',
+    'epdm-self-drilling-roofing-screws',
+    'High-tensile self-drilling hex fasteners with UV-stabilized EPDM sealing washers for leakproof fixing.',
+    12000,
+    1,
+    true,
+    'standard',
+    'bundle',
+    'fastener'
+  ),
+  -- 14. Butyl Waterproof Roofing Tape
+  (
+    (SELECT id FROM public.categories WHERE slug = 'accessories'),
+    'Butyl Waterproof Roofing Tape',
+    'butyl-waterproof-roofing-tape',
+    'Self-adhesive heavy-duty butyl rubber waterproof tape for flashing, overlap and gutter sealing.',
+    7500,
+    1,
+    true,
+    'standard',
+    'roll',
+    'fastener'
+  ),
+  -- 15. Weatherproof Roofing Sealant
+  (
+    (SELECT id FROM public.categories WHERE slug = 'accessories'),
+    'Weatherproof Roofing Sealant',
+    'weatherproof-roofing-sealant',
+    'High-performance elastomeric weatherproof joint sealant formulated for metal roof sealing.',
+    5500,
+    1,
+    true,
+    'standard',
+    'piece',
+    'fastener'
+  ),
+  -- 16. Custom Roofing Sheet Roll Forming
   (
     (SELECT id FROM public.categories WHERE slug = 'roll-forming'),
-    'On-Site Continuous Roll Forming Service',
-    'on-site-continuous-roll-forming-service',
-    'Computerized on-site continuous roll forming rigs up to 30 metres unbroken. Mobile computerized hydraulic rig deployed to construction sites, 4 certified engineers, up to 5,000m daily extrusion capacity (up to 30m seamless unbroken sheets).',
-    25000,
+    'Custom Roofing Sheet Roll Forming',
+    'custom-roofing-sheet-roll-forming',
+    'Custom continuous roll forming of roofing sheets to specified lengths and profiles on-site or in-factory.',
+    0,
     1,
     true,
     'service',
     'service',
     'roll-forming'
   ),
+  -- 17. CNC Bending & Metal Fabrication
   (
     (SELECT id FROM public.categories WHERE slug = 'bending-services'),
-    'Custom CNC Sheet Bending & Curving Service',
-    'custom-cnc-sheet-bending-and-curving-service',
-    'CNC press brake metal folding, arch curving, and bespoke trims. CNC press brake folding up to 1.2mm thickness, ±0.5° angular tolerance, arch curving & valley trims, 24–48hr turnaround.',
-    850,
+    'CNC Bending & Metal Fabrication',
+    'cnc-bending-metal-fabrication',
+    'Precision CNC press brake sheet bending, curving, folding, and custom architectural metal fabrication.',
+    0,
     1,
     true,
     'service',
-    'metre',
+    'service',
     'bending'
-  ),
-  (
-    (SELECT id FROM public.categories WHERE slug = 'accessories'),
-    'Self-Drilling Hex Roofing Screws (Pack of 100)',
-    'self-drilling-hex-roofing-screws-pack-100',
-    'Case-hardened carbon steel (12 × 55mm), high-temp UV-stabilized EPDM washer, Ruspert anti-corrosion coating. EPDM self-drilling hex fasteners, butyl waterproof tapes, and sealants.',
-    6500,
-    1,
-    true,
-    'standard',
-    'bundle',
-    'fastener'
   )
 ON CONFLICT (slug) DO UPDATE SET
   category_id = EXCLUDED.category_id,
@@ -118,34 +307,92 @@ ON CONFLICT (slug) DO UPDATE SET
   unit = EXCLUDED.unit,
   profile_kind = EXCLUDED.profile_kind;
 
--- 3. Insert Product Variants
+-- 4. Upsert Product Variants (48 Total)
 INSERT INTO public.product_variants (product_id, name, sku, price_override, stock_quantity, is_active)
 VALUES
-  -- 1. Premium Longspan Aluminium Roofing Sheet Variants
-  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.45mm / Wine Red', 'LS-045-WR', 3800, 1000, true),
-  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.50mm / Wine Red', 'LS-050-WR', 4200, 1000, true),
-  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.55mm / Slate Grey', 'LS-055-SG', 4700, 1000, true),
-  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.50mm / Forest Green', 'LS-050-FG', 4200, 1000, true),
+  -- 1. Premium Longspan Aluminium Roofing Sheet (5 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.45mm / Wine Red', 'LS-045-WR', 5700, 2000, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.50mm / Wine Red', 'LS-050-WR', 6400, 2000, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.55mm / Slate Grey', 'LS-055-SG', 7500, 2000, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.60mm / Charcoal', 'LS-060-CH', 8900, 1500, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), '0.70mm / Charcoal', 'LS-070-CH', 12500, 1000, true),
 
-  -- 2. Metcopo Steptile Profile Sheet Variants
-  ((SELECT id FROM public.products WHERE slug = 'metcopo-steptile-profile-sheet'), '0.50mm / Traffic Blue', 'MC-050-TB', 4200, 1000, true),
-  ((SELECT id FROM public.products WHERE slug = 'metcopo-steptile-profile-sheet'), '0.55mm / Charcoal Black', 'MC-055-CB', 4800, 1000, true),
+  -- 2. Premium Metcopo Roofing Sheet (4 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'premium-metcopo-roofing-sheet'), '0.45mm / Wine Red', 'MC-045-WR', 6000, 1500, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-metcopo-roofing-sheet'), '0.55mm / Charcoal', 'MC-055-CH', 7200, 1500, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-metcopo-roofing-sheet'), '0.55mm / Forest Green', 'MC-055-FG', 7200, 1500, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-metcopo-roofing-sheet'), '0.60mm / Slate Grey', 'MC-060-SG', 9200, 1000, true),
 
-  -- 3. Stone-Coated Shake Shingle Tile Variants
-  ((SELECT id FROM public.products WHERE slug = 'stone-coated-shake-shingle-tile'), 'Basalt Charcoal Black', 'SH-ST-BLK', 5400, 1000, true),
-  ((SELECT id FROM public.products WHERE slug = 'stone-coated-shake-shingle-tile'), 'Spanish Coffee Brown', 'SH-ST-BRN', 5400, 1000, true),
+  -- 3. Premium Step Tile Roofing Sheet (4 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'premium-step-tile-roofing-sheet'), '0.45mm / Wine Red', 'ST-045-WR', 5800, 1500, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-step-tile-roofing-sheet'), '0.50mm / Chocolate', 'ST-050-CH', 6400, 1500, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-step-tile-roofing-sheet'), '0.55mm / Slate Grey', 'ST-055-SG', 7200, 1500, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-step-tile-roofing-sheet'), '0.60mm / Forest Green', 'ST-060-FG', 9200, 1000, true),
 
-  -- 4. Heavy-Gauge Ridged Apex Cap Variant
-  ((SELECT id FROM public.products WHERE slug = 'heavy-gauge-ridged-apex-cap'), 'Standard Apex Cap (2m Length)', 'RC-APEX-2M', 2800, 500, true),
+  -- 4. Heavy-Duty Corrugated Aluzinc Roofing Sheet (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'heavy-duty-corrugated-aluzinc-roofing-sheet'), '0.40mm / Silver', 'CS-040-SL', 3500, 2000, true),
+  ((SELECT id FROM public.products WHERE slug = 'heavy-duty-corrugated-aluzinc-roofing-sheet'), '0.45mm / Silver', 'CS-045-SL', 4000, 2000, true),
+  ((SELECT id FROM public.products WHERE slug = 'heavy-duty-corrugated-aluzinc-roofing-sheet'), '0.45mm / Blue', 'CS-045-BL', 4300, 1500, true),
 
-  -- 5. On-Site Continuous Roll Forming Service Variant
-  ((SELECT id FROM public.products WHERE slug = 'on-site-continuous-roll-forming-service'), 'On-Site Machine Deployment', 'SRV-ROLL-FORM', 25000, 100, true),
+  -- 5. Premium Stone-Coated Roofing Shingles (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'premium-stone-coated-roofing-shingles'), 'Classic / Charcoal', 'SH-CLS-CH', 8500, 1000, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-stone-coated-roofing-shingles'), 'Classic / Terracotta', 'SH-CLS-TR', 8500, 1000, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-stone-coated-roofing-shingles'), 'Luxury / Black', 'SH-LUX-BK', 10500, 800, true),
 
-  -- 6. Custom CNC Sheet Bending & Curving Service Variant
-  ((SELECT id FROM public.products WHERE slug = 'custom-cnc-sheet-bending-and-curving-service'), 'Custom CNC Bending & Curving', 'SRV-CNC-BEND', 850, 10000, true),
+  -- 6. Aluminium Ridge Cap (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-ridge-cap'), '0.45mm / Wine Red / 2m', 'RC-045-WR-2M', 5500, 300, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-ridge-cap'), '0.50mm / Charcoal / 2m', 'RC-050-CH-2M', 6500, 300, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-ridge-cap'), '0.55mm / Slate Grey / 2m', 'RC-055-SG-2M', 7500, 300, true),
 
-  -- 7. Self-Drilling Hex Roofing Screws Variant
-  ((SELECT id FROM public.products WHERE slug = 'self-drilling-hex-roofing-screws-pack-100'), 'Self-Drilling Hex Screws (Pack of 100)', 'ACC-HEX-100', 6500, 500, true)
+  -- 7. Aluminium Hip Ridge Cap (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-hip-ridge-cap'), '0.45mm / 2m', 'HRC-045-2M', 5500, 300, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-hip-ridge-cap'), '0.50mm / 2m', 'HRC-050-2M', 6500, 300, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-hip-ridge-cap'), '0.55mm / 2m', 'HRC-055-2M', 7500, 300, true),
+
+  -- 8. Aluminium Upper Trimmer (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-upper-trimmer'), '0.45mm / 2m', 'UT-045-2M', 4500, 250, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-upper-trimmer'), '0.50mm / 2m', 'UT-050-2M', 5200, 250, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-upper-trimmer'), '0.55mm / 2m', 'UT-055-2M', 6000, 250, true),
+
+  -- 9. Aluminium Lower Trimmer (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-lower-trimmer'), '0.45mm / 2m', 'LT-045-2M', 4500, 250, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-lower-trimmer'), '0.50mm / 2m', 'LT-050-2M', 5200, 250, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-lower-trimmer'), '0.55mm / 2m', 'LT-055-2M', 6000, 250, true),
+
+  -- 10. Aluminium Valley Gutter (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-valley-gutter'), '0.45mm / 2m', 'VG-045-2M', 6500, 200, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-valley-gutter'), '0.50mm / 2m', 'VG-050-2M', 7500, 200, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-valley-gutter'), '0.55mm / 2m', 'VG-055-2M', 8500, 200, true),
+
+  -- 11. Aluminium Parapet Wall Capping (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-parapet-wall-capping'), '0.45mm', 'PC-045', 4500, 400, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-parapet-wall-capping'), '0.50mm', 'PC-050', 5200, 400, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-parapet-wall-capping'), '0.55mm', 'PC-055', 6000, 400, true),
+
+  -- 12. Custom Aluminium Roof Flashing (2 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'custom-aluminium-roof-flashing'), 'Standard / 0.45mm', 'RF-045-STD', 4000, 300, true),
+  ((SELECT id FROM public.products WHERE slug = 'custom-aluminium-roof-flashing'), 'Heavy Duty / 0.55mm', 'RF-055-HD', 5500, 300, true),
+
+  -- 13. EPDM Self-Drilling Roofing Screws (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'epdm-self-drilling-roofing-screws'), '5.5 x 50mm / 100 pieces', 'RS-0550-100', 12000, 500, true),
+  ((SELECT id FROM public.products WHERE slug = 'epdm-self-drilling-roofing-screws'), '5.5 x 65mm / 100 pieces', 'RS-0565-100', 14000, 500, true),
+  ((SELECT id FROM public.products WHERE slug = 'epdm-self-drilling-roofing-screws'), '5.5 x 75mm / 100 pieces', 'RS-0575-100', 16000, 500, true),
+
+  -- 14. Butyl Waterproof Roofing Tape (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'butyl-waterproof-roofing-tape'), '50mm x 10m', 'BT-5010', 7500, 400, true),
+  ((SELECT id FROM public.products WHERE slug = 'butyl-waterproof-roofing-tape'), '75mm x 10m', 'BT-7510', 10000, 400, true),
+  ((SELECT id FROM public.products WHERE slug = 'butyl-waterproof-roofing-tape'), '100mm x 10m', 'BT-10010', 13000, 400, true),
+
+  -- 15. Weatherproof Roofing Sealant (3 Variants)
+  ((SELECT id FROM public.products WHERE slug = 'weatherproof-roofing-sealant'), '300ml / Clear', 'RS-300-CL', 5500, 500, true),
+  ((SELECT id FROM public.products WHERE slug = 'weatherproof-roofing-sealant'), '300ml / Grey', 'RS-300-GY', 5500, 500, true),
+  ((SELECT id FROM public.products WHERE slug = 'weatherproof-roofing-sealant'), '300ml / Black', 'RS-300-BK', 5500, 500, true),
+
+  -- 16. Custom Roofing Sheet Roll Forming (1 Variant)
+  ((SELECT id FROM public.products WHERE slug = 'custom-roofing-sheet-roll-forming'), 'Custom On-Site/Factory Roll Forming Service', 'SRV-ROLL-FORM', 0, 0, true),
+
+  -- 17. CNC Bending & Metal Fabrication (1 Variant)
+  ((SELECT id FROM public.products WHERE slug = 'cnc-bending-metal-fabrication'), 'Custom CNC Metal Bending & Fabrication Service', 'SRV-CNC-BEND', 0, 0, true)
 ON CONFLICT (sku) DO UPDATE SET
   product_id = EXCLUDED.product_id,
   name = EXCLUDED.name,
