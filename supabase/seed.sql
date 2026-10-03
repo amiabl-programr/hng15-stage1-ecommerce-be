@@ -399,3 +399,66 @@ ON CONFLICT (sku) DO UPDATE SET
   price_override = EXCLUDED.price_override,
   stock_quantity = EXCLUDED.stock_quantity,
   is_active = EXCLUDED.is_active;
+
+-- ==============================================================================
+-- 5. Seed Category Images (Supabase Storage)
+-- ==============================================================================
+DELETE FROM public.category_images WHERE storage_path IN (
+  'long_span.jpg',
+  'black_metcopo.jpg',
+  'step-tiles.jpg',
+  'corrugated-sheets.jpg',
+  'shingles.jpg',
+  'gutters.jpg',
+  'roofing-accessories.jpg',
+  'roll-forming.jpg',
+  'roof_bending.jpg'
+);
+
+INSERT INTO public.category_images (category_id, storage_path, alt_text, display_order, is_primary)
+VALUES
+  ((SELECT id FROM public.categories WHERE slug = 'roofing-sheets'), 'long_span.jpg', 'Roofing Sheets Category Cover', 0, true),
+  ((SELECT id FROM public.categories WHERE slug = 'metcopo-roofing'), 'black_metcopo.jpg', 'Metcopo Roofing Category Cover', 0, true),
+  ((SELECT id FROM public.categories WHERE slug = 'step-tiles'), 'step-tiles.jpg', 'Step Tiles Category Cover', 0, true),
+  ((SELECT id FROM public.categories WHERE slug = 'corrugated-sheets'), 'corrugated-sheets.jpg', 'Corrugated Sheets Category Cover', 0, true),
+  ((SELECT id FROM public.categories WHERE slug = 'shingles'), 'shingles.jpg', 'Roofing Shingles Category Cover', 0, true),
+  ((SELECT id FROM public.categories WHERE slug = 'trimmers-and-gutters'), 'gutters.jpg', 'Trimmers & Gutters Category Cover', 0, true),
+  ((SELECT id FROM public.categories WHERE slug = 'accessories'), 'roofing-accessories.jpg', 'Accessories & Fasteners Category Cover', 0, true),
+  ((SELECT id FROM public.categories WHERE slug = 'roll-forming'), 'roll-forming.jpg', 'Roll Forming Services Category Cover', 0, true),
+  ((SELECT id FROM public.categories WHERE slug = 'bending-services'), 'roof_bending.jpg', 'Bending & Fabrication Services Category Cover', 0, true)
+ON CONFLICT DO NOTHING;
+
+-- ==============================================================================
+-- 6. Seed Product Images (Supabase Storage)
+-- ==============================================================================
+DELETE FROM public.product_images WHERE storage_path IN (
+  'long_span.jpg',
+  'black_metcopo.jpg',
+  'step-tiles.jpg',
+  'corrugated-sheets.jpg',
+  'shingles.jpg',
+  'gutters.jpg',
+  'roofing-accessories.jpg',
+  'roll-forming.jpg',
+  'roll-forming1.jpg',
+  'roof_bending.jpg'
+);
+
+INSERT INTO public.product_images (product_id, storage_path, alt_text, role, width, height, bytes, mime_type, source, license, permission_status, display_order, is_primary)
+VALUES
+  ((SELECT id FROM public.products WHERE slug = 'premium-longspan-aluminium-roofing-sheet'), 'long_span.jpg', 'Photograph of Premium Longspan Aluminium Roofing Sheet', 'main', 1800, 1200, 2558, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-metcopo-roofing-sheet'), 'black_metcopo.jpg', 'Photograph of Premium Metcopo Roofing Sheet', 'main', 1800, 1200, 18903, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-step-tile-roofing-sheet'), 'step-tiles.jpg', 'Photograph of Premium Step Tile Roofing Sheet', 'main', 1800, 1200, 50916, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'heavy-duty-corrugated-aluzinc-roofing-sheet'), 'corrugated-sheets.jpg', 'Photograph of Heavy-Duty Corrugated Aluzinc Roofing Sheet', 'main', 1800, 1200, 24516, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'premium-stone-coated-roofing-shingles'), 'shingles.jpg', 'Photograph of Premium Stone-Coated Roofing Shingles', 'main', 1800, 1200, 34166, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-valley-gutter'), 'gutters.jpg', 'Photograph of Aluminium Valley Gutter', 'main', 1800, 1200, 14714, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-upper-trimmer'), 'gutters.jpg', 'Photograph of Aluminium Upper Trimmer', 'main', 1800, 1200, 14714, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'aluminium-lower-trimmer'), 'gutters.jpg', 'Photograph of Aluminium Lower Trimmer', 'main', 1800, 1200, 14714, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'epdm-self-drilling-roofing-screws'), 'roofing-accessories.jpg', 'Photograph of EPDM Self-Drilling Roofing Screws', 'main', 1800, 1200, 26355, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'butyl-waterproof-roofing-tape'), 'roofing-accessories.jpg', 'Photograph of Butyl Waterproof Roofing Tape', 'main', 1800, 1200, 26355, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'weatherproof-roofing-sealant'), 'roofing-accessories.jpg', 'Photograph of Weatherproof Roofing Sealant', 'main', 1800, 1200, 26355, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'custom-roofing-sheet-roll-forming'), 'roll-forming.jpg', 'Photograph of Custom Roofing Sheet Roll Forming', 'main', 1800, 1200, 37934, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true),
+  ((SELECT id FROM public.products WHERE slug = 'custom-roofing-sheet-roll-forming'), 'roll-forming1.jpg', 'Process detail of Custom Roofing Sheet Roll Forming', 'detail', 1800, 1200, 37512, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 1, false),
+  ((SELECT id FROM public.products WHERE slug = 'cnc-bending-metal-fabrication'), 'roof_bending.jpg', 'Photograph of CNC Bending & Metal Fabrication', 'main', 1800, 1200, 16785, 'image/jpeg', 'supabase_storage', 'proprietary', 'approved', 0, true)
+ON CONFLICT DO NOTHING;
+
