@@ -23,7 +23,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4000
 
-# Install curl for container HEALTHCHECK
+# Install curl for diagnostics if needed
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -42,10 +42,6 @@ COPY --chown=node:node scripts ./scripts
 USER node
 
 EXPOSE 4000
-
-# Healthcheck against Express health route
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-4000}/health || exit 1
 
 # Start the application via tsx execution directly
 CMD ["node_modules/.bin/tsx", "src/index.ts"]
