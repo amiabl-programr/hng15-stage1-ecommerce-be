@@ -48,7 +48,9 @@ export const MobileRedirectUriSchema = z
       val.startsWith('roofingshop://') ||
       val.startsWith('exp://') ||
       val.startsWith('exps://') ||
-      val.startsWith('http://localhost:'),
+      val.startsWith('https://auth.expo.io/') ||
+      val.startsWith('http://localhost:') ||
+      val.startsWith('http://127.0.0.1:'),
     'must be a valid mobile redirect URI (roofingshop://, exp://, or localhost)',
   );
 

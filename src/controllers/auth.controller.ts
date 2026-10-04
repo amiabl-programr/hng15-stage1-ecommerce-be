@@ -75,6 +75,20 @@ export async function googleCallback(
     const redirectTarget = new URL(result.next, config.appUrl).toString();
     res.redirect(redirectTarget);
   } catch (error) {
+    if (typeof state === 'string') {
+      try {
+        const mobileUri = authService.extractRedirectUriFromState(state);
+        if (mobileUri) {
+          const targetUrl = new URL(mobileUri);
+          const msg = error instanceof Error ? error.message : 'Authentication failed';
+          targetUrl.searchParams.set('error', msg);
+          res.redirect(targetUrl.toString());
+          return;
+        }
+      } catch {
+        // Fall back to next(error)
+      }
+    }
     next(error);
   }
 }

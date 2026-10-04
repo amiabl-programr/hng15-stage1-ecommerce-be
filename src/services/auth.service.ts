@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import type { z } from 'zod';
 
 import { env } from '../config/env.ts';
@@ -53,8 +53,29 @@ function sanitizeRedirectUri(rawRedirectUri?: string | null | undefined): string
     rawRedirectUri.startsWith('roofingshop://') ||
     rawRedirectUri.startsWith('exp://') ||
     rawRedirectUri.startsWith('exps://') ||
-    rawRedirectUri.startsWith('http://localhost:');
+    rawRedirectUri.startsWith('https://auth.expo.io/') ||
+    rawRedirectUri.startsWith('http://localhost:') ||
+    rawRedirectUri.startsWith('http://127.0.0.1:');
   return isAllowed ? rawRedirectUri : undefined;
+}
+
+function signStatePayload(payload: string): string {
+  const secret = env().googleClientSecret;
+  const hmac = createHmac('sha256', secret).update(payload).digest('base64url');
+  return `${payload}.${hmac}`;
+}
+
+function verifyAndExtractState(stateString: string): string {
+  const parts = stateString.split('.');
+  if (parts.length === 2 && parts[0] && parts[1]) {
+    const [payload, signature] = parts;
+    const secret = env().googleClientSecret;
+    const expected = createHmac('sha256', secret).update(payload).digest('base64url');
+    if (signature === expected) {
+      return payload;
+    }
+  }
+  return stateString;
 }
 
 function encodeOAuthState(nonce: string, next: string, redirectUri?: string): string {
@@ -62,12 +83,14 @@ function encodeOAuthState(nonce: string, next: string, redirectUri?: string): st
   if (redirectUri) {
     payload.redirectUri = redirectUri;
   }
-  return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  const rawBase64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  return signStatePayload(rawBase64);
 }
 
 function decodeOAuthState(stateString: string): { nonce: string; next: string; redirectUri?: string } {
   try {
-    const json = Buffer.from(stateString, 'base64url').toString('utf8');
+    const rawPayload = verifyAndExtractState(stateString);
+    const json = Buffer.from(rawPayload, 'base64url').toString('utf8');
     const parsed = JSON.parse(json);
     const validated = OAuthStateSchema.safeParse(parsed);
     if (!validated.success) {
@@ -77,6 +100,15 @@ function decodeOAuthState(stateString: string): { nonce: string; next: string; r
   } catch (error) {
     if (error instanceof ValidationError) throw error;
     throw new ValidationError('Failed to decode OAuth state');
+  }
+}
+
+export function extractRedirectUriFromState(stateString: string): string | undefined {
+  try {
+    const decoded = decodeOAuthState(stateString);
+    return sanitizeRedirectUri(decoded.redirectUri);
+  } catch {
+    return undefined;
   }
 }
 
@@ -105,11 +137,22 @@ export async function handleGoogleCallback(
   if (!code) {
     throw new ValidationError('Missing OAuth authorization code');
   }
-  if (!state || !stateCookie) {
-    throw new ValidationError('Missing OAuth state parameter or state cookie');
+  if (!state) {
+    throw new ValidationError('Missing OAuth state parameter');
   }
-  if (state !== stateCookie) {
-    throw new ValidationError('OAuth state parameter does not match state cookie');
+
+  // Check state: accept if cookie matches OR if state contains a valid HMAC signature
+  const isSigned = state.includes('.');
+  if (!isSigned) {
+    if (!stateCookie || state !== stateCookie) {
+      throw new ValidationError('OAuth state parameter does not match state cookie');
+    }
+  } else {
+    const verified = verifyAndExtractState(state);
+    if (verified === state) {
+      // Signature was invalid
+      throw new ValidationError('Invalid OAuth state signature');
+    }
   }
 
   const { next, redirectUri } = decodeOAuthState(state);
