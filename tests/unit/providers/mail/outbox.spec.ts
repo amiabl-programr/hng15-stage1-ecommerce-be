@@ -39,6 +39,30 @@ describe('mail provider and outbox worker', () => {
       expect(result.error).toContain('ECONNREFUSED');
       expect(result.durationMs).toBeGreaterThanOrEqual(0);
     });
+
+    it('passes attempt count when draining outbox messages', async () => {
+      const sendMailSpy = jest
+        .spyOn(mailClient, 'sendMail')
+        .mockResolvedValueOnce({
+          success: true,
+          messageId: 'msg-outbox-attempt',
+          durationMs: 10,
+        });
+
+      jest
+        .spyOn(outboxModel, 'findPendingOutboxMessages')
+        .mockResolvedValueOnce([{ ...sampleOutboxRow, attempts: 2 }]);
+      jest.spyOn(outboxModel, 'markOutboxSent').mockResolvedValueOnce();
+
+      await processOutboxBatch(1);
+
+      expect(sendMailSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'buyer@example.com',
+          attempt: 3,
+        }),
+      );
+    });
   });
 
   describe('processOutboxBatch', () => {

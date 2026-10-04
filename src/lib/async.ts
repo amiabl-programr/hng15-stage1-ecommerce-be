@@ -20,11 +20,13 @@ export async function processOutboxBatch(batchSize = 10): Promise<{ processed: n
     }
 
     for (const msg of messages) {
+      const currentAttempt = msg.attempts + 1;
       const result = await mailClient.sendMail({
         to: msg.to_email,
         subject: msg.subject,
         html: msg.html_body,
         text: msg.text_body ?? undefined,
+        attempt: currentAttempt,
       });
 
       if (result.success) {

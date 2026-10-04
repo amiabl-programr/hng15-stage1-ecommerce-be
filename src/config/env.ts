@@ -54,6 +54,8 @@ const rawEnvSchema = z.object({
   SMTP_USER: realValue,
   SMTP_APP_PASSWORD: realValue,
   MAIL_FROM: z.string().min(1),
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().optional(),
   BUSINESS_EMAIL: z.string().email(),
   BUSINESS_PHONE: z.string().min(1),
 });
@@ -79,6 +81,8 @@ export type Env = {
   readonly smtpUser: string;
   readonly smtpAppPassword: string;
   readonly mailFrom: string;
+  readonly resendApiKey?: string | undefined;
+  readonly resendFrom?: string | undefined;
   readonly businessEmail: string;
   readonly businessPhone: string;
 };
@@ -186,6 +190,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     smtpUser: parsed.SMTP_USER,
     smtpAppPassword: parsed.SMTP_APP_PASSWORD,
     mailFrom: parsed.MAIL_FROM,
+    resendApiKey: parsed.RESEND_API_KEY && !looksLikePlaceholder(parsed.RESEND_API_KEY) ? parsed.RESEND_API_KEY : undefined,
+    resendFrom: parsed.RESEND_FROM && !looksLikePlaceholder(parsed.RESEND_FROM) ? parsed.RESEND_FROM : undefined,
     businessEmail: parsed.BUSINESS_EMAIL,
     businessPhone: parsed.BUSINESS_PHONE,
   };
@@ -196,4 +202,12 @@ let cached: Env | undefined;
 export function env(): Env {
   cached ??= loadEnv();
   return cached;
+}
+
+export function _setEnvForTesting(overrides?: Partial<Env> | undefined): void {
+  if (overrides) {
+    cached = { ...loadEnv(), ...overrides };
+  } else {
+    cached = undefined;
+  }
 }

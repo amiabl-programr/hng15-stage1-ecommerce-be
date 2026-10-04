@@ -1,12 +1,14 @@
 import { env } from '../../config/env.ts';
 import { logger } from '../../lib/logger.ts';
 import { getMailTransporter } from './transport.ts';
+import { resendClient } from './resend.ts';
 
 export interface SendMailOptions {
   to: string;
   subject: string;
   html: string;
   text?: string | undefined;
+  attempt?: number | undefined;
 }
 
 export interface SendMailResult {
@@ -96,7 +98,7 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
 
     const durationMs = Date.now() - start;
 
-    logger.info('email sent successfully', {
+    logger.info('email sent successfully via SMTP', {
       to: options.to,
       subject: options.subject,
       messageId: info.messageId,
@@ -112,9 +114,10 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
     const durationMs = Date.now() - start;
     const details = diagnoseMailError(err, config.smtpHost, config.smtpPort);
 
-    logger.error('failed to send email', {
+    logger.error('failed to send email via SMTP', {
       to: options.to,
       subject: options.subject,
+      attempt: options.attempt,
       error: details.message,
       code: details.code,
       command: details.command,
@@ -126,6 +129,25 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
       durationMs,
       diagnosis: details.diagnostic,
     });
+
+    // Fallback to Resend if configured and attempt threshold met (attempt >= 3 or direct send fallback)
+    const shouldFallbackToResend =
+      Boolean(config.resendApiKey) &&
+      (options.attempt === undefined || options.attempt >= 3);
+
+    if (shouldFallbackToResend) {
+      logger.info('Nodemailer SMTP failed, attempting delivery via Resend backup provider', {
+        to: options.to,
+        subject: options.subject,
+        attempt: options.attempt,
+        primaryError: details.message,
+      });
+
+      const resendResult = await resendClient.sendMailViaResend(options);
+      if (resendResult.success) {
+        return resendResult;
+      }
+    }
 
     return {
       success: false,
@@ -142,3 +164,4 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
 export const mailClient = {
   sendMail,
 };
+
