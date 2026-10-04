@@ -17,6 +17,7 @@ import {
   renderFabricationInquiryHtml,
 } from '../providers/mail/templates/fabrication-inquiry.ts';
 import { mailClient } from '../providers/mail/index.ts';
+import { logger } from '../lib/logger.ts';
 
 export function mapToFabricationRow(row: FabricationRequestRow) {
   return {
@@ -69,14 +70,28 @@ export async function submitFabricationRequest(
       subject,
       html_body: html,
     })
-    .catch(() => undefined);
+    .catch((err) => {
+      logger.error('failed to queue fabrication inquiry email in outbox', {
+        id: created.id,
+        to: input.email,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
 
   // Send direct email immediately
-  void mailClient.sendMail({
-    to: input.email,
-    subject,
-    html,
-  }).catch(() => undefined);
+  void mailClient
+    .sendMail({
+      to: input.email,
+      subject,
+      html,
+    })
+    .catch((err) => {
+      logger.error('failed to send direct fabrication inquiry email', {
+        id: created.id,
+        to: input.email,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
 
   return {
     success: true,

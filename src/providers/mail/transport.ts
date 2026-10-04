@@ -1,8 +1,19 @@
+import dns from 'node:dns';
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 import { env } from '../../config/env.ts';
+
+// Force Node DNS resolver to return IPv4 addresses first.
+// Cloud environments like Render do not have outbound IPv6 routing,
+// causing connections to smtp.gmail.com (which advertises AAAA records)
+// to fail with ENETUNREACH or hang until timeout.
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {
+  // Ignore in runtimes where setDefaultResultOrder is not available
+}
 
 let transporterInstance: Transporter | null = null;
 

@@ -43,13 +43,21 @@ export async function processOutboxBatch(batchSize = 10): Promise<{ processed: n
         await outboxModel
           .markOutboxFailed(msg.id, nextAttempt, result.error || 'Delivery failed')
           .catch((err) => {
-            logger.error('failed to update outbox message attempt', { id: msg.id, err: String(err) });
+            logger.error('failed to update outbox message attempt', {
+              id: msg.id,
+              error: err instanceof Error ? err.message : String(err),
+            });
           });
         logger.error('outbox email delivery attempt failed', {
           id: msg.id,
           to: msg.to_email,
+          subject: msg.subject,
           attempt: nextAttempt,
           error: result.error,
+          code: result.code,
+          command: result.command,
+          responseCode: result.responseCode,
+          durationMs: result.durationMs,
         });
         failed++;
       }

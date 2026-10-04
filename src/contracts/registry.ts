@@ -218,6 +218,7 @@ export const NON_COMPONENT_SCHEMAS: Readonly<Record<string, string>> = {
   InventoryListQuerySchema: 'query parameters',
   // Cookie payload, never a request or response body.
   OAuthStateSchema: 'internal cookie payload',
+  MobileRedirectUriSchema: 'mobile deep link uri guard; internal validator',
 };
 
 export function componentIds(): readonly string[] {

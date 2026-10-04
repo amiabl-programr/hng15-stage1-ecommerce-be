@@ -2,6 +2,13 @@
 // process.env at module load. Loading dotenv anywhere later would arrive after the
 // boot-time env validation it exists to feed.
 import './config/load-env-file.ts';
+import dns from 'node:dns';
+
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {
+  // Ignore in runtimes where setDefaultResultOrder is not available
+}
 
 import { createApp } from './app.ts';
 import { env } from './config/env.ts';
