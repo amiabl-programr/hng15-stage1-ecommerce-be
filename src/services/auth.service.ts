@@ -38,6 +38,7 @@ export interface GoogleCallbackResult {
   sessionToken: string;
   expiresAt: Date;
   next: string;
+  redirectUri?: string | undefined;
 }
 
 function sanitizeNextUrl(rawNext?: string | null | undefined): string {
@@ -46,12 +47,25 @@ function sanitizeNextUrl(rawNext?: string | null | undefined): string {
   return result.success ? result.data : '/account';
 }
 
-function encodeOAuthState(nonce: string, next: string): string {
-  const payload = { nonce, next };
+function sanitizeRedirectUri(rawRedirectUri?: string | null | undefined): string | undefined {
+  if (!rawRedirectUri) return undefined;
+  const isAllowed =
+    rawRedirectUri.startsWith('roofingshop://') ||
+    rawRedirectUri.startsWith('exp://') ||
+    rawRedirectUri.startsWith('exps://') ||
+    rawRedirectUri.startsWith('http://localhost:');
+  return isAllowed ? rawRedirectUri : undefined;
+}
+
+function encodeOAuthState(nonce: string, next: string, redirectUri?: string): string {
+  const payload: { nonce: string; next: string; redirectUri?: string } = { nonce, next };
+  if (redirectUri) {
+    payload.redirectUri = redirectUri;
+  }
   return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
 }
 
-function decodeOAuthState(stateString: string): { nonce: string; next: string } {
+function decodeOAuthState(stateString: string): { nonce: string; next: string; redirectUri?: string } {
   try {
     const json = Buffer.from(stateString, 'base64url').toString('utf8');
     const parsed = JSON.parse(json);
@@ -66,10 +80,14 @@ function decodeOAuthState(stateString: string): { nonce: string; next: string } 
   }
 }
 
-export function initializeGoogleAuth(nextParam?: string | undefined): GoogleAuthInitResult {
+export function initializeGoogleAuth(
+  nextParam?: string | undefined,
+  redirectUriParam?: string | undefined,
+): GoogleAuthInitResult {
   const safeNext = sanitizeNextUrl(nextParam);
+  const safeRedirectUri = sanitizeRedirectUri(redirectUriParam);
   const nonce = randomUUID().replaceAll('-', '');
-  const stateString = encodeOAuthState(nonce, safeNext);
+  const stateString = encodeOAuthState(nonce, safeNext, safeRedirectUri);
   const authUrl = buildGoogleAuthUrl(stateString);
 
   return {
@@ -94,8 +112,9 @@ export async function handleGoogleCallback(
     throw new ValidationError('OAuth state parameter does not match state cookie');
   }
 
-  const { next } = decodeOAuthState(state);
+  const { next, redirectUri } = decodeOAuthState(state);
   const safeNext = sanitizeNextUrl(next);
+  const safeRedirectUri = sanitizeRedirectUri(redirectUri);
 
   const tokens = await exchangeCodeForTokens(code);
   const userInfo = await getGoogleUserInfo(tokens.accessToken);
@@ -147,6 +166,7 @@ export async function handleGoogleCallback(
     sessionToken,
     expiresAt,
     next: safeNext,
+    redirectUri: safeRedirectUri,
   };
 }
 

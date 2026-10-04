@@ -40,6 +40,18 @@ export const SessionListSchema = z.object({
   items: z.array(SessionSchema),
 });
 
+export const MobileRedirectUriSchema = z
+  .string()
+  .trim()
+  .refine(
+    (val) =>
+      val.startsWith('roofingshop://') ||
+      val.startsWith('exp://') ||
+      val.startsWith('exps://') ||
+      val.startsWith('http://localhost:'),
+    'must be a valid mobile redirect URI (roofingshop://, exp://, or localhost)',
+  );
+
 /**
  * `next` is a caller-supplied redirect target that ends up in a 302, so it is required
  * to be a relative path. See `RelativePathSchema` for why the second character matters.
@@ -48,12 +60,14 @@ export const GoogleAuthQuerySchema = z.object({
   // Guarded, not merely described: an unvalidated `next` is how a successful login gets
   // turned into an open redirect. The handler still re-validates at runtime.
   next: RelativePathSchema.default('/account'),
+  redirect_uri: MobileRedirectUriSchema.optional(),
 });
 
 /** The value round-tripped through the `oauth_state` cookie. */
 export const OAuthStateSchema = z.object({
   nonce: z.string().min(16),
   next: z.string(),
+  redirectUri: z.string().optional(),
 });
 
 export const AccountOverviewSchema = z.object({

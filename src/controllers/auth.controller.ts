@@ -13,7 +13,8 @@ import {
 export function googleAuth(req: Request, res: Response, next: NextFunction): void {
   try {
     const nextParam = typeof req.query.next === 'string' ? req.query.next : undefined;
-    const { authUrl, stateCookieValue } = authService.initializeGoogleAuth(nextParam);
+    const redirectUriParam = typeof req.query.redirect_uri === 'string' ? req.query.redirect_uri : undefined;
+    const { authUrl, stateCookieValue } = authService.initializeGoogleAuth(nextParam, redirectUriParam);
 
     const config = env();
     res.cookie(OAUTH_STATE_COOKIE, stateCookieValue, {
@@ -64,6 +65,13 @@ export async function googleCallback(
       maxAge: config.sessionTtlDays * 24 * 60 * 60 * 1000,
     });
 
+    if (result.redirectUri) {
+      const targetUrl = new URL(result.redirectUri);
+      targetUrl.searchParams.set('token', result.sessionToken);
+      res.redirect(targetUrl.toString());
+      return;
+    }
+
     const redirectTarget = new URL(result.next, config.appUrl).toString();
     res.redirect(redirectTarget);
   } catch (error) {
@@ -78,7 +86,9 @@ export async function logout(
 ): Promise<void> {
   try {
     const config = env();
-    const rawToken = req.cookies?.[SESSION_COOKIE_NAME] as string | undefined;
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
+    const rawToken = (req.cookies?.[SESSION_COOKIE_NAME] as string | undefined) ?? bearerToken;
     await authService.logout(rawToken);
 
     res.clearCookie(SESSION_COOKIE_NAME, {
@@ -99,7 +109,9 @@ export async function getMe(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const rawToken = req.cookies?.[SESSION_COOKIE_NAME] as string | undefined;
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
+    const rawToken = (req.cookies?.[SESSION_COOKIE_NAME] as string | undefined) ?? bearerToken;
     const user = await authService.getMe(rawToken);
 
     res.json({ success: true, user });

@@ -14,7 +14,9 @@ export async function requireAuth(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const rawToken = req.cookies?.[SESSION_COOKIE_NAME] as string | undefined;
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
+    const rawToken = (req.cookies?.[SESSION_COOKIE_NAME] as string | undefined) ?? bearerToken;
 
     if (!rawToken) {
       throw new UnauthorizedError('Authentication required');
