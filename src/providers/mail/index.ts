@@ -1,7 +1,7 @@
 import { env } from '../../config/env.ts';
 import { logger } from '../../lib/logger.ts';
 import { getMailTransporter } from './transport.ts';
-import { resendClient } from './resend.ts';
+import { mailerSendClient } from './mailersend.ts';
 
 export interface SendMailOptions {
   to: string;
@@ -130,22 +130,22 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
       diagnosis: details.diagnostic,
     });
 
-    // Fallback to Resend if configured and attempt threshold met (attempt >= 3 or direct send fallback)
-    const shouldFallbackToResend =
-      Boolean(config.resendApiKey) &&
+    // Fallback to MailerSend if configured and attempt threshold met (attempt >= 3 or direct send fallback)
+    const shouldFallbackToMailerSend =
+      Boolean(config.mailerSendKey) &&
       (options.attempt === undefined || options.attempt >= 3);
 
-    if (shouldFallbackToResend) {
-      logger.info('Nodemailer SMTP failed, attempting delivery via Resend backup provider', {
+    if (shouldFallbackToMailerSend) {
+      logger.info('Nodemailer SMTP failed, attempting delivery via MailerSend backup provider', {
         to: options.to,
         subject: options.subject,
         attempt: options.attempt,
         primaryError: details.message,
       });
 
-      const resendResult = await resendClient.sendMailViaResend(options);
-      if (resendResult.success) {
-        return resendResult;
+      const mailerSendResult = await mailerSendClient.sendMailViaMailerSend(options);
+      if (mailerSendResult.success) {
+        return mailerSendResult;
       }
     }
 
@@ -164,4 +164,5 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
 export const mailClient = {
   sendMail,
 };
+
 

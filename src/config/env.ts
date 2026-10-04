@@ -54,8 +54,10 @@ const rawEnvSchema = z.object({
   SMTP_USER: realValue,
   SMTP_APP_PASSWORD: realValue,
   MAIL_FROM: z.string().min(1),
-  RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM: z.string().optional(),
+  MAILER_SEND_KEY: z.string().optional(),
+  MAILERSEND_API_KEY: z.string().optional(),
+  MAILER_SEND_FROM: z.string().optional(),
+  MAILERSEND_FROM: z.string().optional(),
   BUSINESS_EMAIL: z.string().email(),
   BUSINESS_PHONE: z.string().min(1),
 });
@@ -81,8 +83,8 @@ export type Env = {
   readonly smtpUser: string;
   readonly smtpAppPassword: string;
   readonly mailFrom: string;
-  readonly resendApiKey?: string | undefined;
-  readonly resendFrom?: string | undefined;
+  readonly mailerSendKey?: string | undefined;
+  readonly mailerSendFrom?: string | undefined;
   readonly businessEmail: string;
   readonly businessPhone: string;
 };
@@ -190,8 +192,18 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     smtpUser: parsed.SMTP_USER,
     smtpAppPassword: parsed.SMTP_APP_PASSWORD,
     mailFrom: parsed.MAIL_FROM,
-    resendApiKey: parsed.RESEND_API_KEY && !looksLikePlaceholder(parsed.RESEND_API_KEY) ? parsed.RESEND_API_KEY : undefined,
-    resendFrom: parsed.RESEND_FROM && !looksLikePlaceholder(parsed.RESEND_FROM) ? parsed.RESEND_FROM : undefined,
+    mailerSendKey:
+      (parsed.MAILER_SEND_KEY && !looksLikePlaceholder(parsed.MAILER_SEND_KEY)
+        ? parsed.MAILER_SEND_KEY
+        : parsed.MAILERSEND_API_KEY && !looksLikePlaceholder(parsed.MAILERSEND_API_KEY)
+          ? parsed.MAILERSEND_API_KEY
+          : undefined),
+    mailerSendFrom:
+      (parsed.MAILER_SEND_FROM && !looksLikePlaceholder(parsed.MAILER_SEND_FROM)
+        ? parsed.MAILER_SEND_FROM
+        : parsed.MAILERSEND_FROM && !looksLikePlaceholder(parsed.MAILERSEND_FROM)
+          ? parsed.MAILERSEND_FROM
+          : undefined),
     businessEmail: parsed.BUSINESS_EMAIL,
     businessPhone: parsed.BUSINESS_PHONE,
   };
