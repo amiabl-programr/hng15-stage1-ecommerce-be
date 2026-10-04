@@ -87,7 +87,7 @@ function encodeOAuthState(nonce: string, next: string, redirectUri?: string): st
   return signStatePayload(rawBase64);
 }
 
-function decodeOAuthState(stateString: string): { nonce: string; next: string; redirectUri?: string } {
+function decodeOAuthState(stateString: string): { nonce: string; next: string; redirectUri?: string | undefined } {
   try {
     const rawPayload = verifyAndExtractState(stateString);
     const json = Buffer.from(rawPayload, 'base64url').toString('utf8');
@@ -285,6 +285,7 @@ export async function getAccountOverview(profileId: string) {
 export const authService = {
   initializeGoogleAuth,
   handleGoogleCallback,
+  extractRedirectUriFromState,
   logout,
   getMe,
   getAccountOverview,

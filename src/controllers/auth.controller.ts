@@ -36,9 +36,9 @@ export async function googleCallback(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
+  const state = typeof req.query.state === 'string' ? req.query.state : undefined;
   try {
     const code = typeof req.query.code === 'string' ? req.query.code : undefined;
-    const state = typeof req.query.state === 'string' ? req.query.state : undefined;
     const stateCookie = req.cookies?.[OAUTH_STATE_COOKIE] as string | undefined;
 
     const userAgent = req.get('user-agent') ?? null;
