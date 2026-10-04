@@ -20,10 +20,56 @@ export interface KeysetCursor {
   id: string;
 }
 
+const CDN_IMAGE_MAP: Record<string, string> = {
+  'long_span.jpg': 'https://images.unsplash.com/photo-1602193289141-9605ad75d0a5?auto=format&fit=crop&w=800&q=80',
+  'black_metcopo.jpg': 'https://images.unsplash.com/photo-1610056868457-e61d6f9eeb86?auto=format&fit=crop&w=800&q=80',
+  'step-tiles.jpg': 'https://images.unsplash.com/photo-1610056868457-e61d6f9eeb86?auto=format&fit=crop&w=800&q=80',
+  'shingles.jpg': 'https://images.unsplash.com/photo-1647546656105-c6a9cfa6f0fd?auto=format&fit=crop&w=800&q=80',
+  'corrugated-sheets.jpg': 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+  'gutters.jpg': 'https://images.unsplash.com/photo-1617459973560-33aea09d1c22?auto=format&fit=crop&w=800&q=80',
+  'roofing-accessories.jpg': 'https://images.unsplash.com/photo-1647427060142-c18ea9536019?auto=format&fit=crop&w=800&q=80',
+  'roll-forming.jpg': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
+  'roll-forming1.jpg': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
+  'roof_bending.jpg': 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+};
+
+const PROFILE_FALLBACK_IMAGES: Record<string, string> = {
+  'longspan': 'https://images.unsplash.com/photo-1602193289141-9605ad75d0a5?auto=format&fit=crop&w=800&q=80',
+  'metcoppo': 'https://images.unsplash.com/photo-1610056868457-e61d6f9eeb86?auto=format&fit=crop&w=800&q=80',
+  'step-tile': 'https://images.unsplash.com/photo-1610056868457-e61d6f9eeb86?auto=format&fit=crop&w=800&q=80',
+  'shingle': 'https://images.unsplash.com/photo-1647546656105-c6a9cfa6f0fd?auto=format&fit=crop&w=800&q=80',
+  'corrugated': 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+  'ridge': 'https://images.unsplash.com/photo-1617459973560-33aea09d1c22?auto=format&fit=crop&w=800&q=80',
+  'trimmer': 'https://images.unsplash.com/photo-1617459973560-33aea09d1c22?auto=format&fit=crop&w=800&q=80',
+  'gutter': 'https://images.unsplash.com/photo-1617459973560-33aea09d1c22?auto=format&fit=crop&w=800&q=80',
+  'flashing': 'https://images.unsplash.com/photo-1617459973560-33aea09d1c22?auto=format&fit=crop&w=800&q=80',
+  'fastener': 'https://images.unsplash.com/photo-1647427060142-c18ea9536019?auto=format&fit=crop&w=800&q=80',
+  'roll-forming': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
+  'bending': 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+};
+
+const CATEGORY_FALLBACK_IMAGES: Record<string, string> = {
+  'roofing-sheets': 'https://images.unsplash.com/photo-1602193289141-9605ad75d0a5?auto=format&fit=crop&w=800&q=80',
+  'metcopo-roofing': 'https://images.unsplash.com/photo-1610056868457-e61d6f9eeb86?auto=format&fit=crop&w=800&q=80',
+  'step-tiles': 'https://images.unsplash.com/photo-1610056868457-e61d6f9eeb86?auto=format&fit=crop&w=800&q=80',
+  'shingles': 'https://images.unsplash.com/photo-1647546656105-c6a9cfa6f0fd?auto=format&fit=crop&w=800&q=80',
+  'corrugated-sheets': 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+  'ridge-caps': 'https://images.unsplash.com/photo-1617459973560-33aea09d1c22?auto=format&fit=crop&w=800&q=80',
+  'parapets': 'https://images.unsplash.com/photo-1617459973560-33aea09d1c22?auto=format&fit=crop&w=800&q=80',
+  'accessories': 'https://images.unsplash.com/photo-1647427060142-c18ea9536019?auto=format&fit=crop&w=800&q=80',
+  'trimmers-and-gutters': 'https://images.unsplash.com/photo-1617459973560-33aea09d1c22?auto=format&fit=crop&w=800&q=80',
+  'roll-forming': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
+  'bending-services': 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+};
+
 export function resolveImageUrl(storagePath: string): string {
   if (!storagePath) return '';
   if (storagePath.startsWith('http://') || storagePath.startsWith('https://')) {
     return storagePath;
+  }
+  const filename = storagePath.split('/').pop() || storagePath;
+  if (CDN_IMAGE_MAP[filename]) {
+    return CDN_IMAGE_MAP[filename];
   }
   const config = env();
   return `${config.supabaseUrl.origin}/storage/v1/object/public/${config.storageBucket}/${storagePath}`;
@@ -104,6 +150,20 @@ function assembleProduct(
     .filter((img) => img.product_id === p.id)
     .map((img) => mapProductMedia(img, p.name, p.profile_kind));
 
+  if (media.length === 0) {
+    const fallbackUrl = PROFILE_FALLBACK_IMAGES[p.profile_kind] || 'https://images.unsplash.com/photo-1602193289141-9605ad75d0a5?auto=format&fit=crop&w=800&q=80';
+    media.push({
+      id: p.id,
+      url: fallbackUrl,
+      alt: `Photograph of ${p.name}`,
+      role: 'main',
+      width: 800,
+      height: 600,
+      blurhash: '',
+      isPrimary: true,
+    });
+  }
+
   const productVariants = variants
     .filter((v) => v.product_id === p.id)
     .map(mapProductVariant);
@@ -132,15 +192,33 @@ export async function listCategories(): Promise<Category[]> {
   const categoryIds = categories.map((c) => c.id);
   const images = await mediaModel.findPublicImagesByCategoryIds(categoryIds);
 
-  return categories.map((c) => ({
-    id: c.id,
-    name: c.name,
-    slug: c.slug,
-    description: c.description,
-    media: images
+  return categories.map((c) => {
+    const categoryImages = images
       .filter((img) => img.category_id === c.id)
-      .map((img) => mapCategoryMedia(img)),
-  }));
+      .map((img) => mapCategoryMedia(img));
+
+    if (categoryImages.length === 0) {
+      const fallbackUrl = CATEGORY_FALLBACK_IMAGES[c.slug] || 'https://images.unsplash.com/photo-1602193289141-9605ad75d0a5?auto=format&fit=crop&w=800&q=80';
+      categoryImages.push({
+        id: c.id,
+        url: fallbackUrl,
+        alt: `${c.name} Category Cover`,
+        role: 'main',
+        width: 800,
+        height: 600,
+        blurhash: '',
+        isPrimary: true,
+      });
+    }
+
+    return {
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description,
+      media: categoryImages,
+    };
+  });
 }
 
 export async function listProducts(
