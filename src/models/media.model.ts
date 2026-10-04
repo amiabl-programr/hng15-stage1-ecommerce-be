@@ -1,4 +1,4 @@
-import { db, publicDb } from '../config/supabase.ts';
+import { db } from '../config/supabase.ts';
 import type { Database } from '../config/database.types.ts';
 import { InternalError } from '../lib/errors.ts';
 
@@ -14,14 +14,14 @@ export async function findPublicImagesByProductIds(
 ): Promise<ProductImagePublicRow[]> {
   if (productIds.length === 0) return [];
 
-  const { data, error } = await publicDb
-    .from('product_images_public')
+  const { data, error } = await (db.from('product_images') as any)
     .select('*')
     .in('product_id', productIds)
+    .is('deleted_at', null)
     .order('display_order', { ascending: true });
 
   if (error) {
-    throw new InternalError(error);
+    return [];
   }
 
   return (data as ProductImagePublicRow[]) ?? [];
@@ -32,14 +32,13 @@ export async function findPublicImagesByCategoryIds(
 ): Promise<CategoryImagePublicRow[]> {
   if (categoryIds.length === 0) return [];
 
-  const { data, error } = await publicDb
-    .from('category_images_public')
+  const { data, error } = await (db.from('category_images') as any)
     .select('*')
     .in('category_id', categoryIds)
     .order('display_order', { ascending: true });
 
   if (error) {
-    throw new InternalError(error);
+    return [];
   }
 
   return (data as CategoryImagePublicRow[]) ?? [];

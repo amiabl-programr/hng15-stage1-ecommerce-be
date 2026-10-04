@@ -1,11 +1,11 @@
-import { publicDb } from '../config/supabase.ts';
+import { db } from '../config/supabase.ts';
 import type { Database } from '../config/database.types.ts';
 import { InternalError } from '../lib/errors.ts';
 
 export type CategoryRow = Database['public']['Tables']['categories']['Row'];
 
 export async function listAllCategories(): Promise<CategoryRow[]> {
-  const { data, error } = await publicDb
+  const { data, error } = await db
     .from('categories')
     .select('*')
     .order('name', { ascending: true });
@@ -18,7 +18,7 @@ export async function listAllCategories(): Promise<CategoryRow[]> {
 }
 
 export async function findCategoryBySlug(slug: string): Promise<CategoryRow | null> {
-  const { data, error } = await publicDb
+  const { data, error } = await db
     .from('categories')
     .select('*')
     .eq('slug', slug)
@@ -32,7 +32,7 @@ export async function findCategoryBySlug(slug: string): Promise<CategoryRow | nu
 }
 
 export async function findCategoryById(id: string): Promise<CategoryRow | null> {
-  const { data, error } = await publicDb
+  const { data, error } = await db
     .from('categories')
     .select('*')
     .eq('id', id)
