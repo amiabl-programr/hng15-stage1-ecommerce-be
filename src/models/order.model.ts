@@ -1,6 +1,12 @@
 import { db } from '../config/supabase.ts';
 import type { Database, Json } from '../config/database.types.ts';
-import { InsufficientStockError, InternalError, ValidationError } from '../lib/errors.ts';
+import {
+  InsufficientStockError,
+  InternalError,
+  NotFoundError,
+  ValidationError,
+  type AppError,
+} from '../lib/errors.ts';
 
 export type OrderStatus = Database['public']['Enums']['order_status'];
 export type OrderRow = Database['public']['Tables']['orders']['Row'];
@@ -12,6 +18,48 @@ export interface ListOrdersOptions {
   status?: OrderStatus | undefined;
   cursor?: { createdAt: string; id: string } | undefined;
   limit: number;
+}
+
+/**
+ * The `create_order` RPC reports failures as bare RAISE EXCEPTION strings, so the
+ * only signal available is the message text. Classification must stay in sync
+ * with the RAISE EXCEPTION statements in scripts/create-outbox-and-order-rpc.sql.
+ *
+ * Postgres prefixes the raise text itself, so the "not found or inactive" messages
+ * are matched anchored. Ordering matters: stock carries an explicit
+ * `INSUFFICIENT_STOCK:` marker and is checked first.
+ *
+ * The previous implementation classified any message merely containing the
+ * substring "inactive" as a ValidationError, which turned a missing product row
+ * into a 400 the client could never act on.
+ */
+export function classifyCreateOrderError(error: { message?: string }): AppError {
+  const msg = error.message || '';
+  const lower = msg.toLowerCase();
+
+  if (msg.includes('INSUFFICIENT_STOCK') || lower.includes('insufficient stock')) {
+    return new InsufficientStockError(msg);
+  }
+
+  // A product/variant that does not exist is a stale reference, not bad input the
+  // caller can correct by editing fields, so it must not surface as a 400.
+  const productMissing = /^product with id (\S+) not found or inactive/i.exec(msg);
+  if (productMissing) {
+    return new NotFoundError(`Product with id ${productMissing[1]} does not exist or is inactive`);
+  }
+
+  const variantMissing = /^variant with id (\S+) not found or inactive/i.exec(msg);
+  if (variantMissing) {
+    return new NotFoundError(`Variant with id ${variantMissing[1]} does not exist or is inactive`);
+  }
+
+  if (lower.includes('min_order_quantity') || lower.includes('minimum order quantity')) {
+    return new ValidationError('One or more items is below the minimum order quantity');
+  }
+
+  // Anything unrecognised is treated as an internal fault rather than being
+  // surfaced verbatim, so a driver message can never reach the client.
+  return new InternalError(error, 'Failed to create order');
 }
 
 export async function createOrderRpc(
@@ -26,14 +74,7 @@ export async function createOrderRpc(
   });
 
   if (error) {
-    const msg = error.message || '';
-    if (msg.includes('INSUFFICIENT_STOCK') || msg.toLowerCase().includes('insufficient stock')) {
-      throw new InsufficientStockError(msg);
-    }
-    if (msg.includes('min_order_quantity') || msg.includes('inactive') || msg.includes('invalid')) {
-      throw new ValidationError(msg);
-    }
-    throw new InternalError(error, `Failed to create order: ${msg}`);
+    throw classifyCreateOrderError(error);
   }
 
   return data as unknown as OrderRow;
