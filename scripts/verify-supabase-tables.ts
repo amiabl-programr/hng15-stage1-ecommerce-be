@@ -1,13 +1,23 @@
 import '../src/config/load-env-file.ts';
 import { db, publicDb } from '../src/config/supabase.ts';
+import type { Database } from '../src/config/database.types.ts';
 
 async function main() {
   console.log('Testing PostgREST queries across all tables...');
 
-  const tables = ['profiles', 'sessions', 'email_outbox', 'orders', 'products', 'categories', 'cart_items', 'fabrication_requests'];
+  const tables = [
+    'profiles',
+    'sessions',
+    'email_outbox',
+    'orders',
+    'products',
+    'categories',
+    'cart_items',
+    'fabrication_requests',
+  ] as const satisfies ReadonlyArray<keyof Database['public']['Tables']>;
 
   for (const table of tables) {
-    const { data, error } = await (db.from(table as any) as any).select('*').limit(1);
+    const { data, error } = await db.from(table).select('*').limit(1);
     if (error) {
       console.error(`❌ Table ${table} FAILED:`, error);
     } else {

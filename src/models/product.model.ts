@@ -14,7 +14,7 @@ export interface ListProductsOptions {
 export async function listPublicProducts(
   options: ListProductsOptions,
 ): Promise<ProductPublicRow[]> {
-  let query = (db.from('products') as any)
+  let query = db.from('products')
     .select('*')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -44,7 +44,7 @@ export async function listPublicProducts(
 export async function findPublicProductBySlug(
   slug: string,
 ): Promise<ProductPublicRow | null> {
-  const { data, error } = await (db.from('products') as any)
+  const { data, error } = await db.from('products')
     .select('*')
     .eq('slug', slug)
     .eq('is_active', true)
@@ -60,17 +60,19 @@ export async function findPublicProductBySlug(
 export async function listFeaturedProducts(
   limit = 6,
 ): Promise<ProductPublicRow[]> {
-  let query = (db.from('products') as any)
+  const { data: featured, error: featuredError } = await db
+    .from('products')
     .select('*')
     .eq('is_active', true)
     .eq('is_featured', true)
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  let { data, error } = await query;
+  let data = featured;
+  let error = featuredError;
 
   if (!error && (!data || data.length === 0)) {
-    const fallback = await (db.from('products') as any)
+    const fallback = await db.from('products')
       .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -107,7 +109,7 @@ export async function findVariantsByProductIds(
 ): Promise<ProductVariantRow[]> {
   if (productIds.length === 0) return [];
 
-  const { data, error } = await (db.from('product_variants') as any)
+  const { data, error } = await db.from('product_variants')
     .select('*')
     .in('product_id', productIds)
     .eq('is_active', true);

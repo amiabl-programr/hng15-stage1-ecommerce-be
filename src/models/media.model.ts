@@ -14,7 +14,7 @@ export async function findPublicImagesByProductIds(
 ): Promise<ProductImagePublicRow[]> {
   if (productIds.length === 0) return [];
 
-  const { data, error } = await (db.from('product_images') as any)
+  const { data, error } = await db.from('product_images')
     .select('*')
     .in('product_id', productIds)
     .is('deleted_at', null)
@@ -32,7 +32,7 @@ export async function findPublicImagesByCategoryIds(
 ): Promise<CategoryImagePublicRow[]> {
   if (categoryIds.length === 0) return [];
 
-  const { data, error } = await (db.from('category_images') as any)
+  const { data, error } = await db.from('category_images')
     .select('*')
     .in('category_id', categoryIds)
     .order('display_order', { ascending: true });

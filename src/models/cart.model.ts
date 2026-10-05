@@ -25,7 +25,7 @@ export interface CartItemWithProduct extends CartItemRow {
 }
 
 export async function getCartByProfileId(profileId: string): Promise<CartItemRow[]> {
-  const { data, error } = await (db.from('cart_items') as any)
+  const { data, error } = await db.from('cart_items')
     .select('*')
     .eq('profile_id', profileId)
     .order('created_at', { ascending: true });
@@ -44,7 +44,7 @@ export async function addItem(
   quantity: number,
   customSpecs: Json | null,
 ): Promise<CartItemRow> {
-  let query = (db.from('cart_items') as any)
+  let query = db.from('cart_items')
     .select('*')
     .eq('profile_id', profileId)
     .eq('product_id', productId);
@@ -67,7 +67,7 @@ export async function addItem(
 
   if (existingItem) {
     const newQuantity = existingItem.quantity + quantity;
-    const { data: updated, error: updateError } = await (db.from('cart_items') as any)
+    const { data: updated, error: updateError } = await db.from('cart_items')
       .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
       .eq('id', existingItem.id)
       .select('*')
@@ -76,7 +76,7 @@ export async function addItem(
     if (updateError) throw new InternalError(updateError);
     return updated as CartItemRow;
   } else {
-    const { data: inserted, error: insertError } = await (db.from('cart_items') as any)
+    const { data: inserted, error: insertError } = await db.from('cart_items')
       .insert({
         profile_id: profileId,
         product_id: productId,
@@ -97,7 +97,7 @@ export async function updateItemQuantity(
   profileId: string,
   quantity: number,
 ): Promise<CartItemRow> {
-  const { data, error } = await (db.from('cart_items') as any)
+  const { data, error } = await db.from('cart_items')
     .update({ quantity, updated_at: new Date().toISOString() })
     .eq('id', itemId)
     .eq('profile_id', profileId)
@@ -112,7 +112,7 @@ export async function updateItemQuantity(
 }
 
 export async function removeItem(itemId: string, profileId: string): Promise<boolean> {
-  const { error, count } = await (db.from('cart_items') as any)
+  const { error, count } = await db.from('cart_items')
     .delete({ count: 'exact' })
     .eq('id', itemId)
     .eq('profile_id', profileId);
@@ -125,7 +125,7 @@ export async function removeItem(itemId: string, profileId: string): Promise<boo
 }
 
 export async function clearCart(profileId: string): Promise<boolean> {
-  const { error, count } = await (db.from('cart_items') as any)
+  const { error, count } = await db.from('cart_items')
     .delete({ count: 'exact' })
     .eq('profile_id', profileId);
 

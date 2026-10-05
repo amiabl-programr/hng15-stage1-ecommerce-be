@@ -15,9 +15,9 @@ healthRouter.get('/health/diag', async (_req: Request, res: Response) => {
     const config = env();
     const supabaseHost = config.supabaseUrl.hostname;
 
-    const { data: dbCat, error: dbCatErr } = await (db.from('categories') as any).select('id, name');
+    const { data: dbCat, error: dbCatErr } = await db.from('categories').select('id, name');
     const { data: pubCat, error: pubCatErr } = await publicDb.from('categories').select('id, name');
-    const { data: dbProd, error: dbProdErr } = await (db.from('products') as any).select('id, name');
+    const { data: dbProd, error: dbProdErr } = await db.from('products').select('id, name');
     const { data: pubProd, error: pubProdErr } = await publicDb.from('products_public').select('id, name');
 
     let catalogError: string | null = null;
