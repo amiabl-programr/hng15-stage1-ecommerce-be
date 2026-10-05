@@ -4,14 +4,23 @@ import type { SendMailOptions, SendMailResult } from './index.ts';
 
 const MAILERSEND_API_ENDPOINT = 'https://api.mailersend.com/v1/email';
 
-export function parseEmailAddress(raw: string): { email: string; name?: string } {
-  const match = raw.match(/^(?:(?:"?([^"<]+)"?\s*)?<)?([^\s<>@]+@[^\s<>@]+)>?$/);
-  if (match && match[2]) {
-    const name = match[1]?.trim();
-    const email = match[2].trim();
+export function parseEmailAddress(raw: string, defaultName?: string): { email: string; name?: string } {
+  const trimmed = raw.trim();
+  const angleMatch = trimmed.match(/^(?:(?:"?([^"<]+)"?\s*)?<)?([^\s<>]+)>?$/);
+  if (angleMatch && angleMatch[2]) {
+    const name = angleMatch[1]?.trim() || defaultName;
+    let email = angleMatch[2].trim();
+    if (!email.includes('@') && email.includes('.')) {
+      email = `info@${email}`;
+    }
     return name ? { email, name } : { email };
   }
-  return { email: raw.trim() };
+
+  let email = trimmed;
+  if (!email.includes('@') && email.includes('.')) {
+    email = `info@${email}`;
+  }
+  return defaultName ? { email, name: defaultName } : { email };
 }
 
 export async function sendMailViaMailerSend(options: SendMailOptions): Promise<SendMailResult> {
@@ -29,7 +38,8 @@ export async function sendMailViaMailerSend(options: SendMailOptions): Promise<S
 
   // Determine sender: use MAILER_SEND_FROM if provided, otherwise config.mailFrom
   const rawFrom = config.mailerSendFrom || config.mailFrom;
-  const from = parseEmailAddress(rawFrom);
+  const defaultSenderName = 'Roofing Construction Shop';
+  const from = parseEmailAddress(rawFrom, defaultSenderName);
   const toRecipient = parseEmailAddress(options.to);
 
   try {
@@ -63,6 +73,7 @@ export async function sendMailViaMailerSend(options: SendMailOptions): Promise<S
       const errBody = await response.text().catch(() => '');
       logger.error('failed to send email via MailerSend', {
         to: options.to,
+        fromEmail: from.email,
         subject: options.subject,
         status: response.status,
         statusText: response.statusText,
@@ -82,6 +93,7 @@ export async function sendMailViaMailerSend(options: SendMailOptions): Promise<S
 
     logger.info('email sent successfully via MailerSend backup provider', {
       to: options.to,
+      fromEmail: from.email,
       subject: options.subject,
       messageId,
       durationMs,
@@ -98,6 +110,7 @@ export async function sendMailViaMailerSend(options: SendMailOptions): Promise<S
 
     logger.error('unexpected error sending email via MailerSend', {
       to: options.to,
+      fromEmail: from.email,
       subject: options.subject,
       error: message,
       durationMs,

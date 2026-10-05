@@ -31,6 +31,20 @@ describe('MailerSend mail provider', () => {
         email: 'orders@roofingco.com',
       });
     });
+
+    it('formats bare domain without username by prepending info@', () => {
+      expect(parseEmailAddress('test-pzkmgq7e65yl059v.mlsender.net', 'Roofing Construction Shop')).toEqual({
+        name: 'Roofing Construction Shop',
+        email: 'info@test-pzkmgq7e65yl059v.mlsender.net',
+      });
+    });
+
+    it('formats bare domain inside angle brackets', () => {
+      expect(parseEmailAddress('Roofing Construction Shop <test-pzkmgq7e65yl059v.mlsender.net>')).toEqual({
+        name: 'Roofing Construction Shop',
+        email: 'info@test-pzkmgq7e65yl059v.mlsender.net',
+      });
+    });
   });
 
   it('returns early failure if MAILER_SEND_KEY is not configured', async () => {
