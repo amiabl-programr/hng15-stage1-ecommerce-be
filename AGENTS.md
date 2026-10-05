@@ -60,3 +60,7 @@ src/
 - **Admin Verification**: `requireAdmin` checks user role directly from database per-request to prevent stale privilege retention.
 - **Transactional Outbox**: All customer/admin transactional emails are inserted into `email_outbox` in the same database transaction as the triggering action.
 - **Money Handling**: Stored in whole Naira (`bigint` / number integers), zero fractional storage, formatted via `src/lib/money.ts`.
+
+# Git Commit Rules
+- When generating git commit messages or using the git commit tool, do NOT append any "Co-authored-by:" trailers, signatures, or third-party AI attributes (such as Claude). 
+- Keep all commit titles and descriptions strictly limited to the actual technical code modifications.
